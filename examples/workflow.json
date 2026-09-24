@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "title": "Build Thrallwright with Thrallwright",
+  "status": "running",
+  "steps": [
+    {"id": "read", "title": "Read AGENTS.md and inspect the app", "status": "done"},
+    {"id": "implement", "title": "Implement one small improvement", "status": "running"},
+    {"id": "test", "title": "Run tests and inspect the diff", "status": "pending"},
+    {"id": "review", "title": "Open a pull request for review", "status": "pending"}
+  ]
+}

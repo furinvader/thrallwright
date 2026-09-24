@@ -1,0 +1,15 @@
+{
+  "name": "thrallwright-browser-assets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Copies pinned terminal dependencies; no frontend bundler.",
+  "scripts": {
+    "prepare": "node scripts/copy-terminal.mjs",
+    "check": "node --check thrallwright/static/app.js"
+  },
+  "dependencies": {
+    "@xterm/xterm": "6.0.0",
+    "@xterm/addon-fit": "0.11.0"
+  },
+  "engines": {"node": ">=18"}
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="thrallwright-token" content="__TOKEN__">
+  <link rel="icon" href="data:,">
+  <title>Thrallwright — a workbench for your agents</title>
+  <link rel="stylesheet" href="/vendor/terminal.css">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark" aria-hidden="true">T</span><div><strong>thrallwright</strong><small>A workbench for your agents.</small></div></div>
+    <div class="workspace-label"><span class="eyebrow">WORKSPACE</span><span id="workspace-path">Connecting…</span></div>
+    <span class="local-badge"><span aria-hidden="true">●</span> Local only</span>
+  </header>
+  <div id="notice" role="alert" hidden></div>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Agent sessions">
+      <div class="section-heading"><h1>Sessions</h1><span id="session-count" class="count">0</span></div>
+      <button id="new-session" class="primary" disabled>＋ New session</button>
+      <div id="sessions" class="session-list"><p class="muted">Loading your workspace…</p></div>
+      <div class="sidebar-note"><strong>Your CLI, with room to breathe.</strong><p>Approvals stay in the terminal. Refreshing this page won’t stop your agents.</p><span class="eyebrow">V0.1 · PERSONAL WORKSPACE</span></div>
+    </aside>
+    <section class="workbench" aria-label="Terminal workspace">
+      <div class="terminal-heading"><div><span class="eyebrow">WORKBENCH</span><h2 id="terminal-title">Ready when you are</h2></div><div class="terminal-actions"><button id="download" disabled title="Save retained raw terminal output">Save log</button><button id="interrupt" disabled title="Send Ctrl+C to the foreground command">Interrupt</button><button id="stop" class="danger" disabled>Stop</button></div></div>
+      <div class="terminal-stage">
+        <div id="empty" class="empty-state"><span class="empty-mark" aria-hidden="true">⌘</span><span class="eyebrow">YOUR FIRST SESSION</span><h2>Let’s build the next bit.</h2><p>Start your usual coding agent here.<br>Watch it work, answer its questions,<br>and keep an eye on what changes.</p><button id="start-first" class="primary" disabled>Start a session</button><p class="subtle">No agent installed yet? Open a shell.</p></div>
+        <div id="terminal" aria-label="Interactive terminal" hidden></div>
+      </div>
+      <footer class="terminal-footer"><span id="connection-state" role="status">No session selected</span><span>Local processes · not sandboxed</span></footer>
+    </section>
+    <aside class="inspector" aria-label="Workspace inspector">
+      <div class="inspector-heading"><span class="eyebrow">KEEP AN EYE ON</span><button id="refresh" title="Refresh workspace">Refresh</button></div>
+      <div class="tabs" role="tablist" aria-label="Inspector views"><button id="tab-changes" role="tab" aria-selected="true" aria-controls="panel-changes" data-tab="changes">Changes</button><button id="tab-workflow" role="tab" aria-selected="false" aria-controls="panel-workflow" data-tab="workflow">Workflow</button><button id="tab-diff" role="tab" aria-selected="false" aria-controls="panel-diff" data-tab="diff">Diff</button></div>
+      <section id="panel-changes" class="inspector-panel" role="tabpanel" aria-labelledby="tab-changes"><h2>Working tree</h2><p class="muted">Read-only Git status. All sessions share this directory.</p><pre id="git-status">Loading…</pre><p class="small muted">Untracked files appear here. The Diff view covers tracked changes only.</p></section>
+      <section id="panel-workflow" class="inspector-panel" role="tabpanel" aria-labelledby="tab-workflow" hidden><h2 id="workflow-title">Workflow state</h2><p class="muted"><code>.thrallwright/workflow.json</code></p><div id="workflow-steps"></div><pre id="workflow-json">Loading…</pre></section>
+      <section id="panel-diff" class="inspector-panel" role="tabpanel" aria-labelledby="tab-diff" hidden><h2>Tracked changes</h2><p class="muted">Read-only. No commits, staging, or resets are performed here.</p><h3>Unstaged</h3><pre id="diff-unstaged">Loading…</pre><h3>Staged</h3><pre id="diff-staged">Loading…</pre></section>
+      <div class="inspector-footer"><span id="last-refresh">Waiting for workspace</span></div>
+    </aside>
+  </main>
+  <dialog id="session-dialog" aria-labelledby="dialog-title">
+    <form id="session-form"><div class="dialog-heading"><span class="eyebrow">ADD TO YOUR WORKBENCH</span><button type="button" id="close-dialog" aria-label="Close dialog">×</button></div><h2 id="dialog-title">Start a session</h2><p class="muted">Runs in this workspace using your installed CLI and its existing authentication.</p><label for="profile">Agent or shell</label><select id="profile" required></select><label for="session-name">Session name <span class="muted">(optional)</span></label><input id="session-name" maxlength="80" placeholder="e.g. Build the workflow view" autocomplete="off"><p class="small muted">Missing CLIs are disabled. Install them on your PATH, then restart the server. A shell also lets you run other harnesses.</p><p id="form-error" role="alert" hidden></p><button id="launch" class="primary" type="submit">Start session</button></form>
+  </dialog>
+</body>
+</html>
