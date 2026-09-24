@@ -11,6 +11,7 @@ Before implementing behavior, read these documents in order:
 3. docs/features.md
 4. docs/domain-model.md
 5. docs/first-slice.md
+6. docs/decisions/README.md and the decisions relevant to the change
 
 If code and documentation later disagree, do not silently reinterpret the product. Determine whether the code is incomplete or the product documentation needs an explicit update.
 
@@ -70,6 +71,8 @@ The implementation should remain easy for another agent to inspect and modify.
 ## Technology choices
 
 No technology stack is mandated by the product specification.
+
+The accepted implementation direction is recorded separately in [docs/decisions/README.md](docs/decisions/README.md). Follow those decisions when implementing the first slice. If implementation evidence requires a material change, explicitly amend or supersede the relevant decision; do not silently substitute a different stack or architecture. An accepted decision does not mean its implementation or verification is complete.
 
 When selecting implementation technology:
 

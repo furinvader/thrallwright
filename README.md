@@ -42,10 +42,11 @@ A narrow integration with one agent harness and one persistent workflow format i
 - [Feature requirements](docs/features.md) — detailed functional requirements and acceptance conditions.
 - [Conceptual model](docs/domain-model.md) — entities, states, capabilities, and relationships without prescribing implementation technology.
 - [First implementation slice](docs/first-slice.md) — the smallest end-to-end version an independent implementation agent should build first.
+- [Architecture decisions](docs/decisions/README.md) — accepted stack, boundaries, packaging, and developer tooling; implementation is pending.
 - [AGENTS.md](AGENTS.md) — guidance for implementation agents working in this repository.
 
-## Deliberately open decisions
+## Implementation direction
 
-These documents do **not** choose a programming language, framework, UI toolkit, database, process manager, transport, packaging strategy, or deployment architecture.
+The product specification remains technology-neutral. The [architecture decisions](docs/decisions/README.md) record the selected implementation direction: TypeScript and Node.js, Angular and Material, WebSockets, SQLite, a Linux/Nix installation, and a pnpm workspace with `just` as the developer command interface.
 
-Those decisions should be made by the implementation agent according to the constraints of the repository and the smallest practical path to the specified behavior.
+These choices are accepted, but implementation is pending. Concrete versions and remaining implementation details should follow the smallest practical path to the first slice. Material changes to the accepted direction should be recorded explicitly without silently changing product requirements.
