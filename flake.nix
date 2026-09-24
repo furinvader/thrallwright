@@ -77,6 +77,7 @@
               cp -a packages/contracts/node_modules packages/contracts/package.json packages/contracts/dist \
                 "$out/lib/thrallwright/packages/contracts/"
               cp -r apps/web/dist/browser "$out/lib/thrallwright/web"
+              rm -f "$out/lib/thrallwright/node_modules/.pnpm/node_modules/@thrallwright/web"
 
               test -f "$out/lib/thrallwright/apps/server/dist/cli.js"
               test -f "$out/lib/thrallwright/web/index.html"
