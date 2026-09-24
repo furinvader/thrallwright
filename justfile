@@ -41,6 +41,11 @@ format:
 probe *args:
     node scripts/codex-probe.mjs "$@"
 
+# Exercise the browser with real Codex (requires login and uses model credits).
+smoke *args:
+    pnpm build
+    node scripts/workbench-smoke.mjs "$@"
+
 # Build the Nix package and test its runtime from outside this checkout.
 package-smoke:
     bash scripts/package-smoke.sh

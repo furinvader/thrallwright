@@ -38,6 +38,17 @@ export interface CodexAdapter {
   close(): Promise<void>;
 }
 
+/** An explicit rejection differs from a lost transport or missing response. */
+export class CodexRpcError extends Error {
+  constructor(
+    readonly code: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'CodexRpcError';
+  }
+}
+
 type CodexChild = Pick<
   ChildProcessWithoutNullStreams,
   'stdin' | 'stdout' | 'stderr' | 'exitCode' | 'signalCode' | 'kill' | 'on'
@@ -237,7 +248,10 @@ export class CodexProcess implements CodexAdapter {
     if (!pending) return;
     clearTimeout(pending.timer);
     this.pending.delete(message.id);
-    if (message.error) pending.reject(new Error(message.error.message));
+    if (message.error)
+      pending.reject(
+        new CodexRpcError(message.error.code, message.error.message),
+      );
     else pending.resolve(message.result);
   }
 
