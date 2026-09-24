@@ -5,7 +5,7 @@
 .topbar {
   background: #192b31;
   color: #f5f8f6;
-  padding: 0 max(24px, calc((100vw - 1160px) / 2));
+  padding: 0 max(24px, calc((100vw - 1480px) / 2));
 }
 .brand-mark {
   display: grid;
@@ -33,7 +33,7 @@
   font-weight: 400;
 }
 .shell {
-  max-width: 1160px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 64px 24px 80px;
 }
@@ -137,6 +137,236 @@ button {
   background: #fff0ec;
   color: #71372e;
 }
+.stale-note {
+  margin: 24px 0 0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: #fff4db;
+  color: #66512b;
+}
+.workbench-grid {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.9fr) minmax(330px, 1.5fr) minmax(
+      300px,
+      1.15fr
+    );
+  align-items: start;
+  gap: 16px;
+  margin-top: 28px;
+}
+.sessions-column {
+  display: grid;
+  gap: 16px;
+}
+.work-card {
+  min-width: 0;
+  background: #fffefa;
+  border-color: #d4ded8;
+  border-radius: 18px;
+}
+.work-card mat-card-header {
+  padding: 22px 22px 0;
+}
+.work-card mat-card-content {
+  padding: 20px 22px 24px;
+}
+.work-card mat-card-title {
+  color: #253a3e;
+  font-size: 18px;
+  font-weight: 600;
+}
+.work-card mat-card-subtitle {
+  color: #66777b;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.prompt-field {
+  display: block;
+  width: 100%;
+}
+.prompt-field textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+.start-card button {
+  margin-top: 2px;
+}
+.command-card mat-card-content {
+  padding-top: 12px;
+}
+.command-line {
+  margin: 10px 0 0;
+  color: #53656a;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.inline-error {
+  margin: 14px 0 0;
+  color: #934d43;
+  line-height: 1.45;
+}
+.session-list {
+  display: grid;
+  gap: 8px;
+}
+.session-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid #d9e2dd;
+  border-radius: 12px;
+  background: #fff;
+  color: #253a3e;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.session-row:hover,
+.session-row:focus-visible {
+  border-color: #5e8b79;
+  outline: none;
+}
+.session-row.selected {
+  border-color: #43886f;
+  background: #edf5ee;
+}
+.session-title {
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.session-status,
+.session-meta {
+  color: #5d7072;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.empty-state {
+  margin: 12px 0 0;
+  color: #66777b;
+  line-height: 1.5;
+}
+.detail-card {
+  min-height: 500px;
+}
+.activity-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+.detail-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.detail-heading h2 {
+  margin: 0;
+  color: #243b3e;
+  font-size: 18px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #e8efeb;
+  color: #3d6257;
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+.detail-meta {
+  margin: 10px 0 0;
+  color: #6a797c;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.activity-list {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.activity-item {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e1e7e2;
+  border-radius: 10px;
+  background: #fff;
+}
+.activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: #718082;
+  font-size: 11px;
+}
+.activity-kind {
+  color: #436d5f;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.activity-text {
+  max-height: 400px;
+  margin: 10px 0 0;
+  overflow: auto;
+  color: #263b3e;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.workflow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.workflow-actions button {
+  margin: 0;
+}
+.workflow-source {
+  margin-top: 16px;
+}
+.json-inspector {
+  max-height: 620px;
+  margin: 18px 0 0;
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #f7faf7;
+  color: #253a3e;
+  font:
+    12px/1.55 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  white-space: pre;
+}
+@media (max-width: 1190px) {
+  .workbench-grid {
+    grid-template-columns: minmax(250px, 0.9fr) minmax(400px, 1.5fr);
+  }
+  .workbench-grid > section:last-child {
+    grid-column: 1 / -1;
+  }
+  .workflow-card {
+    min-height: 0;
+  }
+}
 @media (max-width: 800px) {
   .status-grid {
     grid-template-columns: 1fr;
@@ -146,6 +376,15 @@ button {
   }
   .shell {
     padding-top: 42px;
+  }
+  .workbench-grid {
+    grid-template-columns: 1fr;
+  }
+  .workbench-grid > section:last-child {
+    grid-column: auto;
+  }
+  .detail-card {
+    min-height: 0;
   }
 }
 @media (max-width: 440px) {

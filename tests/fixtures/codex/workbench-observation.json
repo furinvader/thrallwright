@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-09-24T23:46:10.156Z",
+  "workspaceKind": "Thrallwright checkout",
+  "realCodex": true,
+  "checks": [
+    "Explicit browser start produced real assistant activity and a confirmed turn outcome.",
+    "External scalar/null workflow updates and browser reload preserved observation without execution."
+  ],
+  "executionMethods": ["thread/start", "turn/start"],
+  "success": true
+}

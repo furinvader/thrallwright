@@ -10,7 +10,7 @@
     <p class="eyebrow">Workspace overview</p>
     <h1>Agent work, in view.</h1>
     <p class="lede">
-      Connection and integration status for the active workspace.
+      Sessions, observable activity, and persistent workflow state in one place.
     </p>
   </header>
 
@@ -90,5 +90,225 @@
 
   @if (problem(); as message) {
   <p class="connection-error" role="alert">{{ message }}</p>
+  } @if (snapshot(); as current) { @if (current.storageProblem; as storageError)
+  {
+  <p class="connection-error" role="alert">Storage: {{ storageError }}</p>
+  } @if (backendState() !== 'connected') {
+  <p class="stale-note" role="status">
+    Session and workflow details below are last known information. Live status
+    will return after reconnection.
+  </p>
+  }
+
+  <div class="workbench-grid">
+    <section class="sessions-column" aria-labelledby="sessions-heading">
+      <mat-card appearance="outlined" class="work-card start-card">
+        <mat-card-header>
+          <mat-card-title id="start-heading">Start session</mat-card-title>
+          <mat-card-subtitle
+            >Codex · {{ current.capabilities.startSession ? 'Start is available'
+            : 'Start is unavailable' }}</mat-card-subtitle
+          >
+        </mat-card-header>
+        <mat-card-content>
+          <form (submit)="start($event)">
+            <mat-form-field appearance="outline" class="prompt-field">
+              <mat-label>Initial task</mat-label>
+              <textarea
+                matInput
+                rows="4"
+                [value]="prompt()"
+                (input)="updatePrompt($event)"
+                placeholder="Describe the work for this new session"
+              ></textarea>
+            </mat-form-field>
+            <button mat-flat-button type="submit" [disabled]="!canStart()">
+              Start
+            </button>
+          </form>
+          @if (startError(); as error) {
+          <p class="inline-error" role="alert">{{ error }}</p>
+          } @if (!current.capabilities.startSession || backendState() !==
+          'connected') {
+          <p class="supporting-text">
+            {{ backendState() !== 'connected' ? 'Reconnect to start a session.'
+            : 'Codex cannot start a session right now.' }}
+          </p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      @if (connection.localStarts().length || visibleCommands().length) {
+      <mat-card appearance="outlined" class="work-card command-card">
+        <mat-card-header
+          ><mat-card-title>Start requests</mat-card-title></mat-card-header
+        >
+        <mat-card-content>
+          @for (request of connection.localStarts(); track request.id) {
+          <p class="command-line" role="status">
+            @switch (request.phase) { @case ('rejected') { Start failed: {{
+            request.detail }} } @case ('uncertain') { Outcome unknown: {{
+            request.detail || 'Connection closed before confirmation. Check
+            Sessions before starting again.' }} } @default { Sending start
+            request… } }
+          </p>
+          } @for (command of visibleCommands(); track command.id) {
+          <p class="command-line">
+            <strong>{{ commandLabel(command) }}</strong> · {{ command.detail }}
+          </p>
+          }
+        </mat-card-content>
+      </mat-card>
+      }
+
+      <mat-card appearance="outlined" class="work-card session-list-card">
+        <mat-card-header>
+          <mat-card-title id="sessions-heading">Sessions</mat-card-title>
+          <mat-card-subtitle>{{ current.discovery.detail }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (current.discovery.state === 'unavailable') {
+          <p class="inline-error" role="alert">
+            Session discovery is unavailable.
+          </p>
+          } @if (current.sessions.length) {
+          <div class="session-list">
+            @for (session of current.sessions; track session.id) {
+            <button
+              class="session-row"
+              type="button"
+              [class.selected]="selectedSessionId() === session.id"
+              [attr.aria-pressed]="selectedSessionId() === session.id"
+              (click)="selectSession(session.id)"
+            >
+              <span class="session-title"
+                >{{ session.title || session.id }}</span
+              >
+              <span class="session-status"
+                >{{ statusLabel(session) }} · {{ backendState() === 'connected'
+                ? session.freshness : 'stale' }}</span
+              >
+              @if (session.parentThreadId) {
+              <span class="session-meta"
+                >Parent: {{ session.parentThreadId }}</span
+              >
+              } @if (session.ephemeral) {
+              <span class="session-meta">Ephemeral session</span> }
+            </button>
+            }
+          </div>
+          } @else if (current.discovery.state === 'loading') {
+          <p class="empty-state">Finding sessions…</p>
+          } @else {
+          <p class="empty-state">No sessions are known for this workspace.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </section>
+
+    <section aria-labelledby="activity-heading">
+      <mat-card appearance="outlined" class="work-card detail-card">
+        <mat-card-header>
+          <mat-card-title id="activity-heading">Activity</mat-card-title>
+          <mat-card-subtitle
+            >Observable messages and tool activity</mat-card-subtitle
+          >
+        </mat-card-header>
+        <mat-card-content>
+          <div class="activity-actions">
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="backendState() !== 'connected' || !selectedSession()"
+              (click)="connection.refresh()"
+            >
+              Refresh activity
+            </button>
+          </div>
+          @if (selectedSession(); as session) {
+          <div class="detail-heading">
+            <h2>{{ session.title || session.id }}</h2>
+            <span class="pill">{{ statusLabel(session) }}</span>
+          </div>
+          <p class="detail-meta">
+            {{ session.id }} · {{ session.owned ? 'Started in this workbench' :
+            'Discovered session' }} · Observed {{ session.observedAt }}
+          </p>
+          @if (session.history.state === 'loading') {
+          <p class="supporting-text">Loading activity…</p>
+          } @if (session.history.state === 'unavailable' ||
+          session.history.state === 'deleted') {
+          <p class="inline-error" role="alert">{{ session.history.detail }}</p>
+          } @if (!session.history.complete && session.history.state === 'ready')
+          {
+          <p class="supporting-text">Available history may be incomplete.</p>
+          } @if (session.activities.length) {
+          <ol class="activity-list">
+            @for (item of session.activities; track item.id) {
+            <li class="activity-item">
+              <div class="activity-meta">
+                <span class="activity-kind">{{ item.kind }}</span>
+                <span
+                  >{{ backendState() === 'connected' ? item.origin : 'stale' }}
+                  · {{ item.observedAt }}</span
+                >
+                @if (!item.complete) { <span>Partial or in progress</span> }
+              </div>
+              <pre class="activity-text">{{ item.text }}</pre>
+            </li>
+            }
+          </ol>
+          } @else if (session.history.state !== 'loading') {
+          <p class="empty-state">
+            No observable activity is available for this session.
+          </p>
+          } } @else {
+          <p class="empty-state">Select a session to inspect its activity.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </section>
+
+    <section aria-labelledby="workflow-heading">
+      <mat-card
+        appearance="outlined"
+        class="work-card detail-card workflow-card"
+      >
+        <mat-card-header>
+          <mat-card-title id="workflow-heading">Workflows</mat-card-title>
+          <mat-card-subtitle>Persistent JSON source</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="workflow-actions">
+            <span class="pill">{{ current.workflow.state }}</span>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="backendState() !== 'connected'"
+              (click)="connection.refresh()"
+            >
+              Refresh
+            </button>
+          </div>
+          @if (current.workflow.source) {
+          <p class="detail-meta workflow-source">
+            {{ current.workflow.source }}
+          </p>
+          } @switch (current.workflow.state) { @case ('ready') {
+          <p class="supporting-text">
+            {{ current.workflow.detail }} · Read {{ current.workflow.observedAt
+            }}
+          </p>
+          <pre class="json-inspector" aria-label="Workflow JSON">
+{{ workflowText() }}</pre>
+          } @case ('unconfigured') {
+          <p class="empty-state">{{ current.workflow.detail }}</p>
+          } @default {
+          <p class="inline-error" role="alert">{{ current.workflow.detail }}</p>
+          } }
+        </mat-card-content>
+      </mat-card>
+    </section>
+  </div>
   }
 </main>

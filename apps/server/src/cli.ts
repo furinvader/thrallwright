@@ -12,6 +12,7 @@ async function main() {
   const { values } = parseArgs({
     options: {
       workspace: { type: 'string' },
+      workflow: { type: 'string' },
       'profile-dir': { type: 'string' },
       port: { type: 'string', default: '4318' },
       codex: { type: 'string' },
@@ -21,7 +22,7 @@ async function main() {
   });
   if (values.help) {
     console.log(
-      'thrallwright [--workspace PATH] [--profile-dir PATH] [--port PORT] [--codex EXECUTABLE] [--no-open]\nStarts a local workbench. Workspace defaults to the caller’s working directory.',
+      'thrallwright [--workspace PATH] [--workflow PATH] [--profile-dir PATH] [--port PORT] [--codex EXECUTABLE] [--no-open]\nStarts a local workbench. Workspace defaults to the caller’s working directory. Workflow paths are relative to the workspace and saved for future launches.',
     );
     return;
   }
@@ -39,6 +40,9 @@ async function main() {
   const app = await createApplication({
     workspace,
     paths: storagePaths(values['profile-dir']),
+    workflowPath: values.workflow
+      ? resolve(workspace, values.workflow)
+      : undefined,
     codex,
     webRoot: devOrigin
       ? undefined

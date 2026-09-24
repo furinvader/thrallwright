@@ -57,6 +57,12 @@ starts ephemeral model turns and tests interruption; it requires Codex
 authentication and may incur model usage. Ordinary checks need no Codex
 credentials or paid model calls.
 
+`just smoke [--workspace PATH]` exercises the browser and service against a
+real, logged-in Codex CLI. It starts one model turn and can consume paid model
+usage, so run it deliberately rather than as part of ordinary CI. The default
+workspace is the current directory; pass `--workspace` to use a specific
+project. The check creates a temporary application profile and workflow file.
+
 Noninteractive CI commands use the same interface after setup:
 
 ```sh
@@ -74,7 +80,7 @@ before running either consumer when working outside the just recipes.
 ## Run the packaged application
 
 ```sh
-nix run . -- --workspace /path/to/project
+nix run . -- --workspace /path/to/project --workflow tasks.json
 nix run . -- --workspace ../project --no-open
 ```
 
@@ -83,6 +89,9 @@ and native SQLite driver into one Nix package. It invokes the pinned Node and
 Codex executables by absolute path; it does not prepend them to the service's
 runtime `PATH`. A relative `--workspace` path is resolved from the directory
 where the command is run. `--no-open` keeps the browser closed for headless use.
+`--workflow` selects a JSON file relative to the chosen workspace and persists
+that selection in the application profile for later launches. See
+[the workbench guide](workbench.md) for workflow and session behavior.
 `nix build .#thrallwright` writes a `result` link; `result/bin/thrallwright`
 provides the same command. Run `just package-smoke` to launch the installed
 service outside the checkout, check its browser assets and SQLite database,
