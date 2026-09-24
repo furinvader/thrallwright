@@ -1,0 +1,116 @@
+{
+  "checkedAt": "2026-09-24T23:19:52.855Z",
+  "version": "codex-cli 0.156.1",
+  "mode": "smoke",
+  "runs": [
+    {
+      "attempt": 1,
+      "initialized": true,
+      "platform": "linux",
+      "authPresent": true,
+      "requiresOpenaiAuth": true,
+      "observation": {
+        "listedCount": 2,
+        "listHasMore": false,
+        "statuses": ["notLoaded", "notLoaded"],
+        "loadedCount": 0,
+        "loadedHasMore": false,
+        "history": {
+          "attempted": true,
+          "readable": true,
+          "status": "notLoaded",
+          "turnCount": 31,
+          "itemKinds": [
+            "userMessage",
+            "agentMessage",
+            "commandExecution",
+            "mcpToolCall",
+            "reasoning",
+            "subAgentActivity",
+            "other",
+            "fileChange"
+          ]
+        },
+        "historyLoadedThread": false,
+        "loadedAfterReadCount": 0
+      },
+      "smoke": {
+        "temporaryWorkspace": true,
+        "ephemeral": true,
+        "approvalPolicyOverridden": false,
+        "sandboxOverridden": false,
+        "started": true,
+        "initialStatus": "idle",
+        "completedTurn": "completed",
+        "interruptAcknowledged": true,
+        "interruptOutcome": "interrupted",
+        "finalStatus": "idle"
+      },
+      "shutdown": {
+        "code": 0,
+        "signal": null,
+        "forced": false
+      },
+      "transport": {
+        "notifications": {
+          "other": 9,
+          "thread/started": 1,
+          "thread/status/changed": 4,
+          "turn/started": 2,
+          "item/started": 3,
+          "item/completed": 3,
+          "item/agentMessage/delta": 8,
+          "turn/completed": 2
+        },
+        "serverRequests": [],
+        "stderrBytes": 0,
+        "outputLimitOrParseFailure": false
+      }
+    },
+    {
+      "attempt": 2,
+      "initialized": true,
+      "platform": "linux",
+      "authPresent": true,
+      "requiresOpenaiAuth": true,
+      "observation": {
+        "listedCount": 2,
+        "listHasMore": false,
+        "statuses": ["notLoaded", "notLoaded"],
+        "loadedCount": 0,
+        "loadedHasMore": false,
+        "history": {
+          "attempted": true,
+          "readable": true,
+          "status": "notLoaded",
+          "turnCount": 31,
+          "itemKinds": [
+            "userMessage",
+            "agentMessage",
+            "commandExecution",
+            "mcpToolCall",
+            "reasoning",
+            "subAgentActivity",
+            "other",
+            "fileChange"
+          ]
+        },
+        "historyLoadedThread": false,
+        "loadedAfterReadCount": 0
+      },
+      "shutdown": {
+        "code": 0,
+        "signal": null,
+        "forced": false
+      },
+      "transport": {
+        "notifications": {
+          "other": 3
+        },
+        "serverRequests": [],
+        "stderrBytes": 0,
+        "outputLimitOrParseFailure": false
+      }
+    }
+  ]
+}

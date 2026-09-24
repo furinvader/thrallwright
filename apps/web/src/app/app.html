@@ -1,0 +1,94 @@
+<mat-toolbar class="topbar">
+  <span class="brand-mark" aria-hidden="true">T</span>
+  <span class="brand">Thrallwright</span>
+  <span class="toolbar-spacer"></span>
+  <span class="edition">Local workbench</span>
+</mat-toolbar>
+
+<main class="shell">
+  <header class="page-header">
+    <p class="eyebrow">Workspace overview</p>
+    <h1>Agent work, in view.</h1>
+    <p class="lede">
+      Connection and integration status for the active workspace.
+    </p>
+  </header>
+
+  <div class="status-grid">
+    <mat-card appearance="outlined" class="status-card workspace-card">
+      <mat-card-header>
+        <mat-card-title>Workspace</mat-card-title>
+        <mat-card-subtitle>Active project</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (snapshot(); as current) {
+        <p class="primary-value workspace-path">{{ current.workspace }}</p>
+        @if (backendState() !== 'connected') {
+        <p class="supporting-text">
+          Last known workspace. Waiting for the service to reconnect.
+        </p>
+        } } @else {
+        <p class="primary-value muted">Waiting for workspace</p>
+        <p class="supporting-text">
+          The service will identify the active project when it connects.
+        </p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>Backend</mat-card-title>
+        <mat-card-subtitle>Local service</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="primary-value" role="status">
+          <span
+            class="status-dot"
+            [class.connected]="backendState() === 'connected'"
+            [class.unavailable]="backendState() === 'unavailable'"
+          ></span>
+          @switch (backendState()) { @case ('connected') { Connected } @case
+          ('unavailable') { Unavailable } @default { Connecting } }
+        </p>
+        <p class="supporting-text">
+          {{ backendState() === 'connected' ? 'Local service connected.' :
+          'Waiting for the local service.' }}
+        </p>
+        @if (backendState() === 'unavailable') {
+        <button mat-stroked-button type="button" (click)="connection.retry()">
+          Retry connection
+        </button>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>Codex integration</mat-card-title>
+        <mat-card-subtitle>Harness availability</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="primary-value" role="status">
+          <span
+            class="status-dot"
+            [class.connected]="backendState() === 'connected' && snapshot()?.integration?.state === 'available'"
+            [class.unavailable]="backendState() === 'connected' && snapshot()?.integration?.state === 'unavailable'"
+          ></span>
+          {{ integrationLabel() }}
+        </p>
+        @if (backendState() === 'connected' && snapshot(); as current) {
+        <p class="supporting-text">{{ current.integration.detail }}</p>
+        } @else {
+        <p class="supporting-text">
+          Connect to the local service to check Codex.
+        </p>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  @if (problem(); as message) {
+  <p class="connection-error" role="alert">{{ message }}</p>
+  }
+</main>

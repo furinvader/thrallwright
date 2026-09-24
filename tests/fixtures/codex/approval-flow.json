@@ -1,0 +1,54 @@
+{
+  "provenance": "Synthetic example checked against Codex CLI 0.156.1 generated stable TypeScript schema. Not a recorded live approval.",
+  "messages": [
+    {
+      "method": "item/commandExecution/requestApproval",
+      "id": "server-request-example-1",
+      "params": {
+        "kind": "command",
+        "threadId": "thread-example",
+        "turnId": "turn-example",
+        "itemId": "item-example",
+        "startedAtMs": 1790294400000,
+        "environmentId": null,
+        "approvalId": null,
+        "command": "printf 'example'",
+        "cwd": "/workspace/example",
+        "reason": "Example command requires a decision"
+      }
+    },
+    {
+      "id": "server-request-example-1",
+      "result": { "decision": "decline" }
+    },
+    {
+      "method": "serverRequest/resolved",
+      "params": {
+        "threadId": "thread-example",
+        "requestId": "server-request-example-1"
+      }
+    },
+    {
+      "method": "item/completed",
+      "params": {
+        "threadId": "thread-example",
+        "turnId": "turn-example",
+        "item": {
+          "type": "commandExecution",
+          "id": "item-example",
+          "pluginId": null,
+          "scriptPath": null,
+          "command": "printf 'example'",
+          "cwd": "/workspace/example",
+          "processId": null,
+          "source": "agent",
+          "status": "declined",
+          "commandActions": [],
+          "aggregatedOutput": null,
+          "exitCode": null,
+          "durationMs": null
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-09-24T23:19:18.335Z",
+  "version": "codex-cli 0.156.1",
+  "mode": "read-only",
+  "runs": [
+    {
+      "attempt": 1,
+      "initialized": true,
+      "platform": "linux",
+      "authPresent": true,
+      "requiresOpenaiAuth": true,
+      "observation": {
+        "listedCount": 2,
+        "listHasMore": false,
+        "statuses": ["notLoaded", "notLoaded"],
+        "loadedCount": 0,
+        "loadedHasMore": false,
+        "history": {
+          "attempted": true,
+          "readable": true,
+          "status": "notLoaded",
+          "turnCount": 31,
+          "itemKinds": [
+            "userMessage",
+            "agentMessage",
+            "commandExecution",
+            "mcpToolCall",
+            "reasoning",
+            "subAgentActivity",
+            "other",
+            "fileChange"
+          ]
+        },
+        "historyLoadedThread": false,
+        "loadedAfterReadCount": 0
+      },
+      "shutdown": {
+        "code": 0,
+        "signal": null,
+        "forced": false
+      },
+      "transport": {
+        "notifications": {
+          "other": 3
+        },
+        "serverRequests": [],
+        "stderrBytes": 0,
+        "outputLimitOrParseFailure": false
+      }
+    },
+    {
+      "attempt": 2,
+      "initialized": true,
+      "platform": "linux",
+      "authPresent": true,
+      "requiresOpenaiAuth": true,
+      "observation": {
+        "listedCount": 2,
+        "listHasMore": false,
+        "statuses": ["notLoaded", "notLoaded"],
+        "loadedCount": 0,
+        "loadedHasMore": false,
+        "history": {
+          "attempted": true,
+          "readable": true,
+          "status": "notLoaded",
+          "turnCount": 31,
+          "itemKinds": [
+            "userMessage",
+            "agentMessage",
+            "commandExecution",
+            "mcpToolCall",
+            "reasoning",
+            "subAgentActivity",
+            "other",
+            "fileChange"
+          ]
+        },
+        "historyLoadedThread": false,
+        "loadedAfterReadCount": 0
+      },
+      "shutdown": {
+        "code": 0,
+        "signal": null,
+        "forced": false
+      },
+      "transport": {
+        "notifications": {
+          "other": 3
+        },
+        "serverRequests": [],
+        "stderrBytes": 0,
+        "outputLimitOrParseFailure": false
+      }
+    }
+  ]
+}

@@ -42,11 +42,13 @@ A narrow integration with one agent harness and one persistent workflow format i
 - [Feature requirements](docs/features.md) — detailed functional requirements and acceptance conditions.
 - [Conceptual model](docs/domain-model.md) — entities, states, capabilities, and relationships without prescribing implementation technology.
 - [First implementation slice](docs/first-slice.md) — the smallest end-to-end version an independent implementation agent should build first.
-- [Architecture decisions](docs/decisions/README.md) — accepted stack, boundaries, packaging, and developer tooling; implementation is pending.
+- [Architecture decisions](docs/decisions/README.md) — accepted stack, boundaries, packaging, and developer tooling.
+- [Development guide](docs/development.md) — pinned Linux setup, `just` commands, and packaged launch.
+- [Codex integration](docs/integration/codex.md) — verified capabilities, limitations, and the reproducible probe.
 - [AGENTS.md](AGENTS.md) — guidance for implementation agents working in this repository.
 
 ## Implementation direction
 
 The product specification remains technology-neutral. The [architecture decisions](docs/decisions/README.md) record the selected implementation direction: TypeScript and Node.js, Angular and Material, WebSockets, SQLite, a Linux/Nix installation, and a pnpm workspace with `just` as the developer command interface.
 
-These choices are accepted, but implementation is pending. Concrete versions and remaining implementation details should follow the smallest practical path to the first slice. Material changes to the accepted direction should be recorded explicitly without silently changing product requirements.
+Implementation is underway. The first increment supplies the runnable foundation and a verified Codex integration probe; the full session/workflow workbench and controls follow in [issue #5](https://github.com/furinvader/thrallwright/issues/5) and [issue #6](https://github.com/furinvader/thrallwright/issues/6). See the development guide for the commands available at this stage. Material changes to the accepted direction should be recorded explicitly without silently changing product requirements.
