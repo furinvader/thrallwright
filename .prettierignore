@@ -1,0 +1,16 @@
+pnpm-lock.yaml
+flake.lock
+node_modules/
+dist/
+.angular/
+result
+result-*
+coverage/
+test-results/
+playwright-report/
+docs/decisions/
+AGENTS.md
+docs/product-spec.md
+docs/features.md
+docs/domain-model.md
+docs/first-slice.md

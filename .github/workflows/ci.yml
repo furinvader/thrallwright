@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - name: Install and prepare workspace
+        run: nix develop -c just setup
+      - name: Check source and fast tests
+        run: nix develop -c just check
+      - name: Build release assets
+        run: nix develop -c just build
+      - name: Test browser workflows
+        run: nix develop -c just test-e2e
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - name: Build and inspect runnable Nix package
+        run: nix develop -c just package-smoke
