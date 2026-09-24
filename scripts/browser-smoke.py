@@ -12,7 +12,7 @@ import sys
 import tempfile
 
 from aiohttp import web
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, expect
 
 from thrallwright.server import MANAGER, create_app
 
@@ -46,13 +46,14 @@ async def main(screenshot: Path | None):
                 page = await context.new_page()
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.on("console", lambda message: errors.append(message.text) if message.type == "error" else None)
+                # Locator assertions retry without string eval under the app's strict CSP.
                 await page.goto(f"http://127.0.0.1:{port}")
                 await page.locator("#new-session").click()
                 await page.locator("#profile").select_option("shell")
                 await page.locator("#session-name").fill("Develop Thrallwright")
                 await page.locator("#launch").click()
                 await page.locator("#terminal .xterm-helper-textarea").wait_for()
-                await page.wait_for_function("document.querySelector('#connection-state').textContent.startsWith('Connected')")
+                await expect(page.locator("#connection-state")).to_contain_text("Connected")
                 item = next(iter(app[MANAGER].sessions.values()))
                 pid = item.process.pid
                 async def typed(command):
@@ -66,12 +67,12 @@ async def main(screenshot: Path | None):
                 await typed("printf '__BROWSER_%s__\\n' 'PASS'")
                 await output_contains("__BROWSER_PASS__")
                 await page.reload()
-                await page.wait_for_function("document.querySelector('#connection-state').textContent.startsWith('Connected')")
+                await expect(page.locator("#connection-state")).to_contain_text("Connected")
                 assert item.process.pid == pid and item.running, "Reload lost the process"
                 await typed("printf '__AFTER_%s__\\n' 'REFRESH'")
                 await output_contains("__AFTER_REFRESH__")
                 await page.locator("#tab-diff").click()
-                await page.wait_for_function("document.querySelector('#diff-unstaged').textContent.includes('+Build the next bit')")
+                await expect(page.locator("#diff-unstaged")).to_contain_text("+Build the next bit")
                 workflow = {"version": 1, "title": "Develop Thrallwright", "steps": [
                     {"id": "launch", "title": "Start the workbench", "status": "done"},
                     {"id": "test", "title": "Run the integration tests", "status": "running"},
@@ -81,7 +82,7 @@ async def main(screenshot: Path | None):
                 workflow_path.write_text(json.dumps(workflow))
                 await page.locator("#tab-workflow").click()
                 await page.locator("#refresh").click()
-                await page.wait_for_function("document.querySelectorAll('.workflow-step').length === 3")
+                await expect(page.locator(".workflow-step")).to_have_count(3)
                 source = Path(__file__).resolve().parents[1]
                 await typed(f"{shlex.quote(sys.executable)} -m unittest discover -s {shlex.quote(str(source / 'tests'))} -v; "
                             "result=$?; printf '__SUITE_EXIT_%s__\\n' \"$result\"; printf '__TESTS_%s__\\n' 'FINISHED'")
@@ -96,14 +97,14 @@ async def main(screenshot: Path | None):
                 assert (await downloaded.value).suggested_filename.endswith(".log")
                 workflow_path.write_text('{"title":"<img src=x onerror=alert(1)>"}')
                 await page.locator("#refresh").click()
-                await page.wait_for_function("document.querySelector('#workflow-title').textContent.includes('<img')")
-                assert await page.locator("#workflow-title img").count() == 0
+                await expect(page.locator("#workflow-title")).to_contain_text("<img")
+                await expect(page.locator("#workflow-title img")).to_have_count(0)
                 workflow_path.write_text("{")
                 await page.locator("#refresh").click()
-                await page.wait_for_function("document.querySelector('#workflow-json').textContent.includes('Cannot read workflow')")
+                await expect(page.locator("#workflow-json")).to_contain_text("Cannot read workflow")
                 await page.set_viewport_size({"width": 390, "height": 844})
                 await page.wait_for_timeout(150)
-                assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "Mobile overflow"
+                assert await page.evaluate("() => document.documentElement.scrollWidth <= innerWidth"), "Mobile overflow"
                 await page.set_viewport_size({"width": 1440, "height": 960})
                 await typed("sleep 30")
                 await asyncio.sleep(0.2)
