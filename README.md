@@ -60,6 +60,8 @@ Run `just` to list developer commands. `just check` runs dependency-policy, form
 
 Node dependency declarations use exact versions, and routine installs require the committed lockfile. Follow the [dependency update procedure](docs/development.md#dependency-versions) for intentional changes. The [development guide](docs/development.md) documents focused tests and the separate real-Codex smoke commands.
 
+Use type-prefixed commit subjects and PR titles, such as `feat: add a workflow source` or `docs: update setup instructions`. See the [commit and PR workflow](docs/development.md#commits-and-pull-requests) for the naming convention and check.
+
 ## Product principles
 
 - **Capability truth over simulated completeness.** If a harness does not expose a fact or control, the interface must not imply that it does.
