@@ -40,19 +40,23 @@ Pin every direct dependency declaration to an exact version, including developme
 
 Use a root `justfile` as the documented entry point for development and CI tasks. Begin with one file and concise recipe descriptions; split into included files only when its size warrants it. Configure bare `just` to list available commands. `just` provides recipe discovery and parameterized commands. [Just manual](https://just.systems/man/en/), [listing recipes](https://just.systems/man/en/listing-available-recipes.html)
 
-The intended command set is:
+The root `justfile` provides:
 
 | Command | Purpose |
 | --- | --- |
-| `just setup` | Install locked JavaScript dependencies and prepare initial development outputs. |
-| `just dev` | Start frontend and backend development processes with rebuilds. |
-| `just check` | Check formatting, lint, types/templates, and fast tests without watch mode. |
-| `just test` | Run unit and integration tests, with focused execution supported. |
-| `just test-e2e` | Run complete browser workflows. |
+| `just setup` | Check dependency declarations, install the frozen lockfile, prepare native dependencies, and build contracts. |
+| `just dev [CLI options]` | Start contracts, service, and browser watch processes; pass options such as `--workflow PATH` to the service. |
+| `just check-deps` | Reject non-exact first-party dependency declarations. |
+| `just check` | Check dependency declarations, formatting, lint, compilation, and fast tests. |
+| `just test [server\|web\|contracts] [runner arguments]` | Run all fast tests or focus on one package. |
+| `just test-e2e [Playwright arguments]` | Build and run browser-to-service workflows. |
 | `just build` | Produce release assets. |
 | `just format` | Apply formatting explicitly. |
+| `just probe [--smoke]` | Check Codex RPCs; the optional smoke mode makes real model calls. |
+| `just smoke [--controls] [--workspace PATH]` | Exercise the browser against real Codex; requires authentication and model usage. |
+| `just package-smoke` | Build and launch the Nix package outside the checkout. |
 
-These are intended interfaces, not implemented commands. Precise test-selection arguments remain an implementation detail. Keep checks separate from commands that rewrite source files.
+Bare `just` lists the recipes. `just check` does not rewrite source files; `just format` does.
 
 Keep recipes thin and their behavior easy to inspect. Delegate to package-local scripts and existing tools; define each underlying build or test operation once. pnpm manages JavaScript dependencies and workspace tasks, Angular and TypeScript perform compilation, and test runners own test execution. `just` coordinates those commands without becoming a second build system or a custom process supervisor. Put substantial orchestration in a named script when necessary.
 
@@ -73,7 +77,7 @@ Repository tasks normally run from the root justfile's directory, matching just'
 | Linting | ESLint with TypeScript and Angular ESLint rules. |
 | Formatting | Prettier. |
 
-Angular's supported build and testing pipelines handle framework-specific compilation. Keep browser and Node compiler environments distinct while sharing strictness defaults. Select compatible concrete tool versions during scaffolding. [Angular build system](https://angular.dev/tools/cli/build-system-migration), [Angular testing](https://angular.dev/guide/testing), [Angular ESLint](https://github.com/angular-eslint/angular-eslint)
+Angular's supported build and testing pipelines handle framework-specific compilation. Browser and Node compiler environments remain distinct while sharing strictness defaults. Exact manifest declarations and the pnpm lockfile select concrete tool versions. [Angular build system](https://angular.dev/tools/cli/build-system-migration), [Angular testing](https://angular.dev/guide/testing), [Angular ESLint](https://github.com/angular-eslint/angular-eslint)
 
 Compile contracts to JavaScript and declarations with explicit package exports. Use the same package import paths during development and in installed code. Build contracts before their consumers; the development command handles initial readiness and subsequent rebuilds.
 
@@ -89,6 +93,6 @@ npm workspaces remain a viable alternative. pnpm is selected for explicit local 
 
 Nx remains a credible option for more extensive project graphs, dependency rules, and build coordination. Start with workspace tasks and explicit import rules; revisit an additional orchestrator if project growth or CI costs justify it. Do not add Nx or Turborepo initially.
 
-## Verification during implementation
+## Verification
 
-Exercise setup from a fresh checkout, command discovery, focused tests, and the complete check/build flow. Verify that recipe failures return nonzero status, changes to contracts reach both consumers, browser code cannot import backend implementation, and development processes shut down together. Confirm that CI and local recipes share their underlying operations and that application launch still preserves the requested workspace and durable profile.
+The CI workflow runs `just setup`, `just check`, `just build`, `just test-e2e`, and `just package-smoke` through the Nix development shell. `just setup` runs the dependency policy check before its frozen install, while `just check` repeats that check with formatting, lint, compilation, and fast tests. Focused tests run through `just test PACKAGE`. The development supervisor waits for both service and browser readiness and stops its child process groups on shutdown. The package smoke check verifies caller-relative workspace resolution and profile persistence outside the checkout.

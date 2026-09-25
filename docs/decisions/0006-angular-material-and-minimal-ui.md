@@ -35,7 +35,7 @@ Angular Aria supplies interaction and accessibility primitives while leaving mar
 
 Aria may later be introduced for specific components alongside retained Material controls. Such changes require template, styling, and interaction work. Feature boundaries and independent service contracts limit their impact without promising a drop-in migration.
 
-No additional UI store, virtualization library, layout package, or custom design system is selected. Exact package versions and theme values will be chosen when implementing the first slice.
+No additional UI store, virtualization library, layout package, or custom design system is installed. [apps/web/package.json](../../apps/web/package.json) pins the UI dependencies. The first slice uses Material's `azure-blue` prebuilt theme through [angular.json](../../apps/web/angular.json), with application styles in [styles.scss](../../apps/web/src/styles.scss) and workbench layout in [app.scss](../../apps/web/src/app/app.scss).
 
 ## Verification during implementation
 

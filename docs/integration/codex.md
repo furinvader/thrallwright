@@ -91,11 +91,14 @@ Stdio carries one JSON object per line. Messages omit `jsonrpc`. Client requests
 | `thread/list`        | `{ cwd, limit, cursor?, useStateDbOnly: true }`; returns `{ data: Thread[], nextCursor }`. The cwd match is exact. Default source filters include interactive sources; explicitly select other supported `sourceKinds` when needed.                      |
 | `thread/read`        | `{ threadId, includeTurns: true }`; returns `{ thread }` without resuming. Full-history loading is deprecated for paginated threads; pagination APIs require a separately evaluated experimental opt-in. Surface unavailable/oversized history honestly. |
 | `thread/loaded/list` | `{ limit, cursor? }`; returns `{ data: string[], nextCursor }` for this app-server's loaded threads.                                                                                                                                                     |
-| `thread/start`       | `{ cwd, ephemeral? }`; returns `{ thread, model, approvalPolicy, approvalsReviewer, sandbox, ... }`. Omitted policy overrides preserve Codex configuration.                                                                                              |
-| `thread/resume`      | `{ threadId }`; explicitly resumes persisted history or rejoins a thread already running in this app-server. It is an execution-related operation, never a navigation side effect.                                                                       |
+| `thread/start`       | `{ cwd, ephemeral? }`; returns `{ thread, model, approvalPolicy, approvalsReviewer, sandbox, ... }`. Thrallwright starts durable threads and omits policy overrides, preserving Codex configuration.                                                     |
+| `thread/resume`      | `{ threadId }`; loads a persisted conversation. Thrallwright uses it only after an explicit Resume action on a known historical session, never as a navigation side effect or a means to attach to an arbitrary live process.                            |
 | `turn/start`         | `{ threadId, input: [{ type: "text", text }] }`; returns an initial `{ turn }`, then streams notifications.                                                                                                                                              |
-| `turn/steer`         | `{ threadId, expectedTurnId, input }`; appends input to that active turn and returns `{ turnId }`. The turn-ID precondition prevents steering a different turn.                                                                                          |
 | `turn/interrupt`     | `{ threadId, turnId }`; returns `{}`. Wait for the subsequent source outcome before claiming interruption completed.                                                                                                                                     |
+
+Codex also defines `turn/steer` for appending input to an active turn, but
+Thrallwright does not expose it. **Send input** starts a new turn only when an
+owned session is idle.
 
 `Thread.status` is `notLoaded`, `idle`, `systemError`, or `active` with `activeFlags`. The flags can be `waitingOnApproval` or `waitingOnUserInput`. A completed turn does not make a conversation permanently finished, and `idle` does not establish that all work is complete. `parentThreadId`, when present, is an authoritative subagent relationship; titles and timestamps are not substitutes.
 
@@ -105,12 +108,12 @@ On app-server disconnect, clear live control and pending request actionability. 
 
 ## Approvals and unresolved requests
 
-The stable 0.156.1 schema exposes:
+The pinned 0.156.1 generated schema exposes:
 
 - `item/commandExecution/requestApproval`: `threadId`, `turnId`, `itemId`, `startedAtMs`, `kind` (`command` or `writeStdin`), nullable `environmentId`, and optional action context such as `command`, `cwd`, `reason`, and a distinct `approvalId`.
 - `item/fileChange/requestApproval`: `threadId`, `turnId`, `itemId`, `startedAtMs`, optional `reason`, and optional `grantRoot`.
 
-Respond to the server request's RPC **id**, not merely its item ID: `{ id, result: { decision: "accept" } }` or `{ id, result: { decision: "decline" } }`. The schema also supports session-wide and amendment decisions; those require their own explicit UI semantics. Supporting only one-action accept and decline initially avoids conflating broader permission grants with ordinary approval.
+Respond to the server request's RPC **id**, not merely its item ID: `{ id, result: { decision: "accept" } }` or `{ id, result: { decision: "decline" } }`. Thrallwright exposes these as **Allow once** and **Decline** only for supported requests tied to the current owned session and turn. The schema also supports session-wide and amendment decisions, but this UI does not offer them. A file-change request need not include the proposed change details; the user must inspect the related activity before deciding.
 
 `serverRequest/resolved` contains `{ threadId, requestId }`. It confirms that the request was answered or cleared, not that the underlying action succeeded. `item/completed` provides the subsequent item outcome. An already-resolved request must not accept another response; losing the connection after writing a response leaves uncertainty until authoritative evidence resolves it.
 

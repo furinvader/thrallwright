@@ -28,15 +28,20 @@ The Sessions list distinguishes a currently observed Codex session from saved
 history. A thread discovered from Codex storage can be inspected, but its
 existence does not show that an agent is running or that Thrallwright can
 control it. A workbench-owned session that loses its live connection is shown
-as disconnected until Codex provides fresh evidence. Opening a session does
-not resume it or send input.
+as disconnected. After a service restart, its restored activity is historical
+until Codex provides fresh evidence. Opening a session does not resume it or
+send input. **Refresh activity** requests a new, read-only history inspection
+when the source changes or a previous read fails.
 
 Activity labels identify whether an item came from live observation, Codex
 history, or Thrallwright's cache. Cached activity remains useful after a
 restart, but it is historical and may be incomplete. A saved approval or status
 does not become actionable merely because it was cached. The workbench shows
 integration and history failures explicitly, so an unavailable source does not
-look like an empty session.
+look like an empty session. The activity projection shows at most 100 recent
+items per session and limits individual text items to 8 KiB. **Partial or in
+progress** can therefore mean that history was truncated, unavailable, or is
+still being produced; it is not a completion signal.
 
 Thrallwright keeps a bounded local activity cache for up to 20 sessions and
 8 MiB of cached activity payloads per workspace. Older activity may be evicted;
@@ -56,20 +61,27 @@ be ready without an OpenAI account. If sign-in is required, run `codex login`
 in the same environment that runs the workbench, then refresh. In a Nix
 checkout, `nix develop -c codex login` uses the pinned CLI.
 
-Starting a session creates a Codex thread and sends the initial input.
-Opening a historical session only inspects it; **Resume** is a separate,
-explicit action that asks Codex to load the saved conversation. **Send** is
-available for a currently owned, idle session. **Interrupt** targets the
-currently observed turn; its request acknowledgment does not prove that the
-turn stopped. The workbench waits for Codex's turn outcome to confirm that.
-These controls are available only when the current connection and session
-state support them.
+**Start** creates a Codex thread and sends the prompt entered for that action.
+Opening a historical session only inspects it; **Resume saved conversation**
+is a separate, explicit action that asks Codex to load the saved conversation.
+A saved ID can be stale, in which case Codex may reject Resume. **Send input**
+starts a new turn for a currently owned, idle session. Start, Resume, and Send
+require the authentication check to be ready. **Interrupt active turn** targets
+the currently observed turn and can remain available if the authentication
+check fails. Its request acknowledgment does not prove that the turn stopped;
+the workbench waits for Codex's turn outcome. All controls also depend on the
+current connection and session state.
 
 For a live structured command or file-change approval, the workbench can
-**Accept** or **Decline** that one request. It does not turn a single approval
-into a session-wide permission grant. Other request kinds remain visible but
-are not answered as if they were command approvals. Saved or disconnected
-approval items are never actionable.
+**Allow once** or **Decline** that one request. Its card identifies the exact
+session, turn, and item, with a **View session activity** button. A file-change
+request may omit the proposed changes, so inspect the related activity before
+deciding. These actions can remain available if the authentication check fails.
+They do not create a session-wide permission grant. Other request kinds and
+unsupported approval forms remain visible but cannot be answered as command
+approvals. Saved or disconnected approval items are never actionable. An
+**Approval request cleared** record means Codex cleared the request; the
+underlying action's outcome is separate.
 
 Execution-changing requests have local command records. A timed-out or lost
 response may have reached Codex, so an **uncertain** record is not resent
@@ -81,8 +93,11 @@ does not promise that its live process survives for later reconnection.
 ## Workflow state
 
 The Workflows view displays arbitrary valid JSON, including objects, arrays,
-numbers, strings, booleans, and `null`. No special task schema is required. The
-service checks the configured regular file about every two seconds and limits
+numbers, strings, booleans, and `null`. It preserves the source document, so
+large numeric literals and duplicate keys are not silently rewritten. Deep or
+large documents may use the original compact source instead of indentation.
+No special task schema is required. The service checks the configured regular
+file about every two seconds and limits
 the displayed source to 4 MiB. Replace the file externally and the view will
 refresh; Thrallwright never writes to the workflow file.
 

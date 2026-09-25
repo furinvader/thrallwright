@@ -19,7 +19,9 @@ Use WebSockets for live browser-service communication, with a small, explicitly 
 | Snapshots | Establish current service state when opening or reconnecting. |
 | Events | Report subsequent activity and state changes. |
 
-Organize shared public contracts by feature. Share browser-facing command, response, snapshot, and event definitions between frontend and backend, with runtime validation at the wire boundary. [ADR 0005](0005-backend-libraries.md) selects Zod for validation; exact message envelopes remain an implementation decision.
+Organize shared public contracts by feature. Share browser-facing command, response, snapshot, and event definitions between frontend and backend, with runtime validation at the wire boundary. [ADR 0005](0005-backend-libraries.md) selects Zod for validation; the implemented envelopes are defined in [packages/contracts/src/index.ts](../../packages/contracts/src/index.ts).
+
+The message categories above describe responsibilities, not four required wire variants. The first slice accepts `refresh`, `inspect`, and execution `command` messages. The service sends complete revisioned `snapshot` messages and explicit `error` messages. Snapshots include command records and observed activity, so command progress and state updates currently travel within snapshots rather than separate response or event envelopes. This deliberately small protocol has no incremental replay or negotiated protocol version.
 
 Internal backend events and raw harness messages remain implementation details unless deliberately included in the public contract. A browser may request an approval response; it cannot publish authoritative approval resolution. A shared wire connection does not introduce a globally writable application event bus.
 
@@ -49,10 +51,10 @@ HTTP commands plus SSE would provide ordinary request/response semantics and bro
 
 WebSockets provide a coherent channel for commands and observations while requiring explicit request correlation and recovery behavior. The browser API's `send()` does not acknowledge server receipt or execution. [WebSocket specification](https://websockets.spec.whatwg.org/)
 
-[ADR 0005](0005-backend-libraries.md) selects Fastify, its WebSocket plugin, and Zod. Protocol versioning and precise envelope fields remain implementation decisions. This choice does not require moving UI asset delivery or file transfers onto the socket.
+[ADR 0005](0005-backend-libraries.md) selects Fastify, its WebSocket plugin, and Zod. Frontend and service are released together; protocol negotiation remains deferred. HTTP serves the browser assets, while the WebSocket carries the validated workbench messages.
 
-## Verification during implementation
+## Verification
 
 Exercise activity arriving during snapshot loading, disconnects around command submission, and reconnects after service restart. Verify that recovery neither loses available activity at the snapshot boundary nor duplicates it, stale approvals stay non-actionable, uncertain commands remain visible, and reconnecting or changing UI observers causes no implicit execution commands.
 
-These checks apply to the eventual implementation. This decision does not implement the transport or expand the product scope.
+The [service transport tests](../../apps/server/src/app.test.ts), [browser connection tests](../../apps/web/src/app/workbench-connection.spec.ts), and [browser workflows](../../tests/e2e) cover these boundaries. Keep this behavior when extending the shared contracts.

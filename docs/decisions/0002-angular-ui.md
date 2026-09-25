@@ -42,10 +42,10 @@ React is the strongest alternative. Its [external-store API](https://react.dev/r
 
 Vue, Svelte, and Solid can support the architecture. Their presentation models are attractive, but no identified product requirement currently justifies introducing a less familiar framework.
 
-[ADR 0006](0006-angular-material-and-minimal-ui.md) selects Angular Material, a simple theme, and ordinary CSS layout for the first interface. Additional store and virtualization libraries remain open. Browser-service communication is recorded in [ADR 0003](0003-websocket-protocol.md), and repository structure, build tools, and testing tools in [ADR 0008](0008-repository-and-developer-tooling.md). Exact package versions and build configuration will be selected when scaffolding the first implementation.
+[ADR 0006](0006-angular-material-and-minimal-ui.md) selects Angular Material, a simple theme, and ordinary CSS layout for the first interface. No additional store or virtualization library is installed. Browser-service communication is recorded in [ADR 0003](0003-websocket-protocol.md), and repository structure, build tools, and testing tools in [ADR 0008](0008-repository-and-developer-tooling.md). Exact UI package versions are recorded in [apps/web/package.json](../../apps/web/package.json); [angular.json](../../apps/web/angular.json) defines the build and test configuration.
 
-## Verification during implementation
+## Verification
 
 Check that reopening or navigating the UI does not duplicate sessions or send commands; component subscriptions do not duplicate command execution; and disconnected or stale approvals are not presented as actionable. Exercise a growing transcript while preserving the user's reading position, keyboard access to controls, and workflow error visibility.
 
-These are behavioral checks for the eventual implementation. Recording this decision does not implement the UI or change the product scope.
+The [browser connection tests](../../apps/web/src/app/workbench-connection.spec.ts) and [browser workflow tests](../../tests/e2e) cover connection recovery and explicit control behavior. The [first-slice verification record](../first-slice.md#14-verification-record) documents real-Codex evidence and the limits of approval verification.
