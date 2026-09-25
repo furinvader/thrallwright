@@ -1,6 +1,6 @@
 # Working on Thrallwright
 
-This repository describes Thrallwright as a product before it prescribes an implementation.
+Thrallwright's initial Codex/JSON slice is implemented. Product requirements and architecture decisions remain separate; use the implementation and verification records to establish what works today.
 
 ## Read first
 
@@ -12,6 +12,7 @@ Before implementing behavior, read these documents in order:
 4. docs/domain-model.md
 5. docs/first-slice.md
 6. docs/decisions/README.md and the decisions relevant to the change
+7. docs/development.md and docs/workbench.md for current commands and operational limits; docs/integration/codex.md when changing the harness integration
 
 If code and documentation later disagree, do not silently reinterpret the product. Determine whether the code is incomplete or the product documentation needs an explicit update.
 
@@ -30,7 +31,7 @@ The application should make it easy to answer:
 - What has completed, what is blocked, and what outputs were produced?
 - Which controls are actually available for this session through its harness?
 
-The first practical milestone is intentionally narrow: Thrallwright should become useful while Thrallwright itself is being developed.
+The first practical milestone is complete: a local Codex workbench with read-only JSON workflow inspection. Its [verification record](docs/first-slice.md#14-verification-record) distinguishes real-Codex evidence from controlled approval fixtures. Preserve this loop while extending the application.
 
 ## Implementation rules
 
@@ -64,7 +65,7 @@ The fantasy-inspired identity should come from branding and visual treatment, no
 
 ### Prefer a vertical slice
 
-Build the end-to-end loop in docs/first-slice.md before adding broad integration abstractions, rich dashboards, generalized orchestration, or decorative features.
+Preserve the end-to-end loop in docs/first-slice.md when adding features. Broader integration abstractions, rich dashboards, generalized orchestration, and decorative features need concrete product justification.
 
 The implementation should remain easy for another agent to inspect and modify.
 
@@ -72,7 +73,7 @@ The implementation should remain easy for another agent to inspect and modify.
 
 No technology stack is mandated by the product specification.
 
-The accepted implementation direction is recorded separately in [docs/decisions/README.md](docs/decisions/README.md). Follow those decisions when implementing the first slice. If implementation evidence requires a material change, explicitly amend or supersede the relevant decision; do not silently substitute a different stack or architecture. An accepted decision does not mean its implementation or verification is complete.
+The accepted implementation direction is recorded separately in [docs/decisions/README.md](docs/decisions/README.md). Follow those decisions when extending the application. If implementation evidence requires a material change, explicitly amend or supersede the relevant decision; do not silently substitute a different stack or architecture. Check linked code and tests rather than treating an accepted decision as proof of every capability.
 
 When selecting implementation technology:
 
@@ -85,7 +86,7 @@ Do not turn an incidental first implementation choice into a product requirement
 
 ## Dependency policy
 
-Keep all dependency declarations at exact versions, including development, optional, and peer dependencies. Use `workspace:<exact version>` for local packages. Do not introduce semver ranges, tags, or unpinned sources. Preserve the committed pnpm lockfile; routine installs must use the frozen lockfile. Run `just check-deps` before setup when editing manifests, and follow the deliberate update procedure in [docs/development.md](docs/development.md#dependency-versions).
+Keep all dependency declarations at exact versions, including development, optional, and peer dependencies. Use `workspace:<exact version>` for local packages. Do not introduce semver ranges, tags, or unpinned sources. Preserve the committed pnpm lockfile; routine installs must use the frozen lockfile. `just setup` runs `just check-deps` before installation; run it directly when editing manifests, and follow the deliberate update procedure in [docs/development.md](docs/development.md#dependency-versions).
 
 ## Changes to the specification
 

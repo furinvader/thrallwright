@@ -29,7 +29,7 @@ Cache meaningful activity for sessions opened or observed: messages, exposed too
 
 Retain provenance, stable source identities where available, freshness, and completeness information. Reconcile overlapping cached items with fresh source data without assuming that history can only append. If the source is temporarily unavailable, show cached history with its limitations.
 
-Keep the cache bounded with a simple size or age policy selected during implementation. Cache eviction must preserve app-owned metadata, Thrallwright-only records that cannot be reconstructed from the harness, and unresolved command outcomes. Explicit source deletion and non-persistence settings require deliberate retention behavior distinct from temporary unavailability.
+Keep the cache bounded with a simple size or age policy. The implemented [observation store](../../apps/server/src/storage/observations.ts) retains cached activity for up to 20 sessions and 8 MiB per workspace; [normalization](../../apps/server/src/features/sessions/normalize.ts) bounds displayed items and text. Cache eviction preserves app-owned session metadata and command records. Explicit source deletion clears cached activity, and ephemeral sessions are not persisted in session metadata or the activity cache. See the [workbench guide](../workbench.md) for the user-visible retention limits.
 
 This cache supports inspection and continuity; permanent independent archival remains a separate product decision.
 
@@ -41,7 +41,7 @@ SQLite cannot commit atomically with a harness operation. A crash after dispatch
 
 After restart, load metadata and cached history, rediscover sessions, refresh source state, and reconcile command records before publishing verified live state or enabling stale approvals. Follow the snapshot/update boundary in ADR 0003. Restoring records never implicitly starts, resumes, interrupts, or stops agent work.
 
-Use explicit migrations and small feature-local persistence operations. [ADR 0005](0005-backend-libraries.md) selects better-sqlite3 and Kysely, and [ADR 0007](0007-linux-packaging-and-storage.md) selects storage locations. Schema details and exact retention limits remain implementation decisions.
+Use explicit migrations and small feature-local persistence operations. [ADR 0005](0005-backend-libraries.md) selects better-sqlite3 and Kysely, and [ADR 0007](0007-linux-packaging-and-storage.md) selects storage locations. The implemented schema and migrations are in [storage/database.ts](../../apps/server/src/storage/database.ts); retention limits belong to the stores and normalization code linked above.
 
 ## Workflow source boundary
 

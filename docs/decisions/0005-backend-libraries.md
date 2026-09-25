@@ -4,7 +4,7 @@ Status: Accepted, 2026-09-25. Implemented for the first slice; see the [workbenc
 
 ## Context
 
-Thrallwright uses TypeScript and Node.js, an Angular browser interface, a shared WebSocket protocol, and SQLite persistence. The next implementation choices should support the explicit ownership and feature boundaries in [ADR 0001](0001-typescript-and-event-architecture.md), the protocol in [ADR 0003](0003-websocket-protocol.md), and the storage policy in [ADR 0004](0004-persistence-and-workflow-sources.md).
+Thrallwright uses TypeScript and Node.js, an Angular browser interface, a shared WebSocket protocol, and SQLite persistence. The backend libraries support the explicit ownership and feature boundaries in [ADR 0001](0001-typescript-and-event-architecture.md), the protocol in [ADR 0003](0003-websocket-protocol.md), and the storage policy in [ADR 0004](0004-persistence-and-workflow-sources.md).
 
 ## Decision
 
@@ -16,7 +16,7 @@ Thrallwright uses TypeScript and Node.js, an Angular browser interface, a shared
 | SQLite driver | `better-sqlite3` | Established prepared-statement and transaction APIs with query-builder support. |
 | Queries and migrations | Kysely | Type-safe queries close to SQL and explicit migrations support locally inspectable persistence operations. |
 
-Select compatible package versions and the supported Node version when scaffolding the implementation. This decision selects libraries without installing dependencies or implementing behavior.
+Exact library versions are recorded in [apps/server/package.json](../../apps/server/package.json) and [packages/contracts/package.json](../../packages/contracts/package.json), with the complete dependency graph pinned in [pnpm-lock.yaml](../../pnpm-lock.yaml). The [Nix flake](../../flake.nix) selects the Node 24 runtime from the locked Nixpkgs revision.
 
 ## Server boundaries
 

@@ -1,10 +1,10 @@
 # ADR 0001: TypeScript and explicit event and effect ownership
 
-Status: Accepted, 2026-09-24. Implemented for the first slice; see the [workbench guide](../workbench.md) and [integration evidence](../integration/codex.md).
+Status: Accepted, 2026-09-24. Applied to the first slice with the implementation scope below; see the [workbench guide](../workbench.md) and [integration evidence](../integration/codex.md).
 
 ## Context
 
-Thrallwright combines observable agent activity with persistent workflow state. The product scope is defined in the [product specification](../product-spec.md) and [first implementation slice](../first-slice.md). The first implementation will use Codex and a local service with a browser interface.
+Thrallwright combines observable agent activity with persistent workflow state. The product scope is defined in the [product specification](../product-spec.md) and [first implementation slice](../first-slice.md). The first implementation uses Codex and a local service with a browser interface.
 
 The architecture should let a developer or coding agent understand one behavior by reading its feature and explicit dependency contracts. Important consequences should be discoverable without loading the whole application into context. This is a design objective, not a claim about measured agent performance or model training data.
 
@@ -22,6 +22,8 @@ Use TypeScript with strict checking and Node.js for the local service. Organize 
 | Shared observation feed | Expose read-only events to activity views, diagnostics, and other consumers. |
 
 Apply this structure proportionately. Session lifecycle and approval handling warrant explicit transitions and effects. A straightforward file read or history query can remain an ordinary async function. Effect handlers can be plain functions or exhaustive switches; begin with concrete operations rather than a generalized effect framework.
+
+Implementation note, 2026-09-25: the first slice uses concrete lifecycle-owning services with explicit adapter calls, subscriptions, and persisted command evidence. [Command policy](../../apps/server/src/features/commands/policy.ts) contains pure capability and operation checks; [commands](../../apps/server/src/features/commands/commands.ts) and [approvals](../../apps/server/src/features/approvals/approvals.ts) coordinate effects through service methods. Not every lifecycle update is expressed as a separate pure transition and effect description. The table guides further extraction as state-handling complexity grows, while ownership and explicit dependencies remain required.
 
 ## Ownership and authority
 
@@ -68,7 +70,7 @@ The transition can be tested with ordinary values. The effect handler can be tes
 
 Keep a feature's state, messages, transition rules, effect mapping, and behavioral tests close enough to inspect together. Prefer meaningful feature boundaries over a fixed file count or many tiny layers. Dependencies should be constructor or function parameters, and typed effects should lead directly to their handlers.
 
-Document lifecycle and failure semantics beside the relevant contracts, with a short application map for navigation. Use exhaustive handling for internal effect unions and runtime validation at external boundaries.
+Document lifecycle and failure semantics beside the relevant contracts, with a short application map for navigation. The current [code map](../development.md#code-map) identifies feature owners, adapters, storage, and browser boundaries. Use exhaustive handling for internal effect unions and runtime validation at external boundaries.
 
 Implementation checks should demonstrate that:
 

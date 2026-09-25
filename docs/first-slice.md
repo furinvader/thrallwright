@@ -1,6 +1,8 @@
 # First implementation slice
 
-This document defines the smallest end-to-end Thrallwright that should be implemented before broadening the product.
+Status: Implemented and verified for the initial Codex/JSON scope. See the [verification record](#14-verification-record) for evidence and the [workbench guide](workbench.md) for current limits.
+
+This document preserves the acceptance criteria for the smallest end-to-end Thrallwright. Use them as a regression baseline before broadening the product.
 
 The goal is not to prove a technology stack. The goal is to prove that combining live agent work with persistent workflow state is useful in daily development.
 

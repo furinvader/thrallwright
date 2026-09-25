@@ -2,30 +2,63 @@
 
 **A workbench for your agents.**
 
-Thrallwright is a local workbench for observing and directing AI agents, managing sessions, and tracking persistent workflows.
+Thrallwright is a local Linux workbench for observing and directing AI agents, managing sessions, and tracking persistent workflows. The first implementation supports Codex and a read-only JSON workflow source, with a browser UI backed by a local service.
 
 The product exists to bring two views of agent work together:
 
 1. **What the agents are doing** — sessions, activity, status, relationships, approvals, results, and available controls.
 2. **Where the work stands** — durable workflow state that can outlive any one session or conversation.
 
-Thrallwright is intended to wrap existing agents and harnesses rather than replace them. It is not an agent framework, a model runtime, or a general-purpose orchestration platform.
+Thrallwright wraps existing agents and harnesses. Codex retains ownership of execution, authentication, permissions, and conversation history; your workflow file remains the source of truth for work state.
 
-## Product shape
+## Run the workbench
 
-The core experience has three responsibilities:
+Install [Nix](https://nixos.org/download/) with flakes and `nix-command` enabled; see the [setup prerequisite](docs/development.md#prerequisite). Nix supplies the pinned Node runtime, Codex CLI, and native dependencies.
 
-- **Observe agents.** Show the sessions that exist, what they are working on, what activity their harness exposes, and whether they are running, waiting, finished, or disconnected.
-- **Understand workflows.** Show persistent task or workflow state alongside live activity so progress does not have to be reconstructed from terminal output or conversation history.
-- **Direct work.** Expose controls that a connected harness genuinely supports, such as starting a session, sending input, responding to an approval request, or interrupting execution.
+From the project you want to observe:
 
-The interface should be explicit about the difference between observing a saved session, resuming a conversation, and controlling a process that is currently running.
+```sh
+nix run github:furinvader/thrallwright -- --workspace "$PWD"
+```
 
-## Initial product goal
+To inspect a workflow file too, add `--workflow tasks.json`; its path is relative to the selected workspace. The file must already exist or be created by you or another tool. The service opens the browser at `http://127.0.0.1:4318`. Add `--no-open` for headless use, or `--port PORT` to choose another port. Stop the service with Ctrl+C.
 
-The first useful version should be small enough to build and understand, but useful enough that Thrallwright can be used while developing Thrallwright itself.
+For a persistent `thrallwright` command:
 
-A narrow integration with one agent harness and one persistent workflow format is sufficient. Breadth should come after the central loop is useful.
+```sh
+nix profile add github:furinvader/thrallwright#thrallwright
+thrallwright --workspace /path/to/project --workflow tasks.json
+```
+
+Codex must be configured for the provider you use before starting model work. The [development and installation guide](docs/development.md) covers login with the managed Codex CLI, storage locations, running from a checkout, and supported Linux targets. The first run may take time while Nix downloads and builds the pinned environment.
+
+## What works today
+
+The initial Codex/JSON slice is implemented and has been exercised against real Codex:
+
+- Discover saved sessions for the selected workspace and inspect available activity.
+- Start a conversation, explicitly resume a saved one, send input, and interrupt a turn when the integration exposes those controls.
+- Respond to supported command and file-change approval requests. Approval flows are tested with controlled protocol and browser fixtures; the recorded live smoke run did not encounter an approval request.
+- Inspect arbitrary JSON alongside session activity, observe external file changes, and see missing, malformed, or unreadable source errors.
+- Retain session metadata, bounded activity history, and command evidence across restarts. Uncertain command outcomes remain visible, and recovery never automatically resends work.
+
+Thrallwright currently serves one local user and one workspace per service. It cannot attach to arbitrary externally running Codex CLI processes; saved history is distinct from live control. Workflow editing, a source-control change view, rich subagent graphs, and hosted collaboration are deferred. See [Using the workbench](docs/workbench.md) for controls, retention limits, and recovery behavior, and the [first-slice verification record](docs/first-slice.md#14-verification-record) for evidence.
+
+## Develop
+
+```sh
+git clone https://github.com/furinvader/thrallwright.git
+cd thrallwright
+nix develop
+just setup
+just dev
+```
+
+Open `http://127.0.0.1:4200` for the development UI. `just dev` uses an isolated `.thrallwright-dev/` profile and stops its development processes on Ctrl+C. Use `just dev --workflow tasks.json` to inspect a workflow while developing.
+
+Run `just` to list developer commands. `just check` runs dependency-policy, formatting, lint, build, and fast-test checks; `just test-e2e` exercises browser workflows; `just package-smoke` checks the installed Nix package. Ordinary checks need no Codex credentials or paid model calls.
+
+Node dependency declarations use exact versions, and routine installs require the committed lockfile. Follow the [dependency update procedure](docs/development.md#dependency-versions) for intentional changes. The [development guide](docs/development.md) documents focused tests and the separate real-Codex smoke commands.
 
 ## Product principles
 
@@ -41,15 +74,15 @@ A narrow integration with one agent harness and one persistent workflow format i
 - [Product specification](docs/product-spec.md) — goals, scope, product rules, and user-facing behavior.
 - [Feature requirements](docs/features.md) — detailed functional requirements and acceptance conditions.
 - [Conceptual model](docs/domain-model.md) — entities, states, capabilities, and relationships without prescribing implementation technology.
-- [First implementation slice](docs/first-slice.md) — the smallest end-to-end version an independent implementation agent should build first.
+- [First implementation slice](docs/first-slice.md) — acceptance criteria and verification of the implemented initial milestone.
 - [Architecture decisions](docs/decisions/README.md) — accepted stack, boundaries, packaging, and developer tooling.
 - [Development guide](docs/development.md) — pinned Linux setup, `just` commands, and packaged launch.
 - [Using the workbench](docs/workbench.md) — sessions, activity, workflow sources, and recovery limits.
 - [Codex integration](docs/integration/codex.md) — verified capabilities, limitations, and the reproducible probe.
 - [AGENTS.md](AGENTS.md) — guidance for implementation agents working in this repository.
 
-## Implementation direction
+## Implementation
 
 The product specification remains technology-neutral. The [architecture decisions](docs/decisions/README.md) record the selected implementation direction: TypeScript and Node.js, Angular and Material, WebSockets, SQLite, a Linux/Nix installation, and a pnpm workspace with `just` as the developer command interface.
 
-The workbench discovers Codex sessions, displays observable activity, starts or explicitly resumes conversations, sends input, interrupts turns, handles supported approvals, and inspects a configured read-only JSON workflow. Saved metadata and a bounded activity cache remain inspectable when Codex is unavailable. Commands retain persisted evidence and uncertain outcomes across connection failures; restarting never automatically resends work. See the development and workbench guides for supported commands and capability limits. Material changes to the accepted direction should be recorded explicitly without silently changing product requirements.
+The repository contains `apps/server` for the local service and CLI, `apps/web` for the browser UI, and `packages/contracts` for shared validated messages. See the [code map](docs/development.md#code-map) for entry points. Material changes to the accepted direction should be recorded explicitly without silently changing product requirements.
