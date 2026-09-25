@@ -83,6 +83,10 @@ When selecting implementation technology:
 
 Do not turn an incidental first implementation choice into a product requirement without updating the product documentation.
 
+## Dependency policy
+
+Keep all dependency declarations at exact versions, including development, optional, and peer dependencies. Use `workspace:<exact version>` for local packages. Do not introduce semver ranges, tags, or unpinned sources. Preserve the committed pnpm lockfile; routine installs must use the frozen lockfile. Run `just check-deps` before setup when editing manifests, and follow the deliberate update procedure in [docs/development.md](docs/development.md#dependency-versions).
+
 ## Changes to the specification
 
 When behavior changes intentionally, update the relevant Markdown specification in the same pull request.
