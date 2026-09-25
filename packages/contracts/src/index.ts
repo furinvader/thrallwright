@@ -39,6 +39,9 @@ export const sessionSchema = z.object({
     detail: z.string(),
   }),
   activities: z.array(activitySchema),
+  capabilities: z
+    .object({ resume: z.boolean(), input: z.boolean(), interrupt: z.boolean() })
+    .optional(),
 });
 export const discoverySchema = z.object({
   state: z.enum(['loading', 'ready', 'unavailable']),
@@ -68,7 +71,7 @@ export const workflowSchema = z.discriminatedUnion('state', [
 ]);
 export const commandRecordSchema = z.object({
   id: z.string(),
-  operation: z.literal('start'),
+  operation: z.enum(['start', 'resume', 'input', 'interrupt', 'approval']),
   targetId: z.string().nullable(),
   phase: z.enum([
     'intent',
@@ -83,6 +86,26 @@ export const commandRecordSchema = z.object({
   updatedAt: z.string(),
   resultSessionId: z.string().nullable(),
   turnId: z.string().nullable(),
+  approvalId: z.string().nullable().default(null),
+});
+export const approvalSchema = z.object({
+  id: z.string(),
+  sessionId: z.string().nullable(),
+  turnId: z.string().nullable(),
+  itemId: z.string().nullable(),
+  kind: z.enum(['command', 'fileChange', 'unsupported']),
+  method: z.string(),
+  summary: z.string(),
+  reason: z.string().nullable(),
+  status: z.enum(['pending', 'submitting', 'resolved', 'stale', 'unsupported']),
+  actionable: z.boolean(),
+  observedAt: z.string(),
+  detail: z.string(),
+  commandId: z.string().nullable(),
+});
+export const authSchema = z.object({
+  state: z.enum(['checking', 'ready', 'required', 'unavailable']),
+  detail: z.string(),
 });
 export const snapshotMessageSchema = z.object({
   type: z.literal('snapshot'),
@@ -105,6 +128,11 @@ export const snapshotMessageSchema = z.object({
     .object({ startSession: z.boolean() })
     .default({ startSession: false }),
   storageProblem: z.string().nullable().default(null),
+  approvals: z.array(approvalSchema).default([]),
+  auth: authSchema.default({
+    state: 'checking',
+    detail: 'Checking Codex authentication.',
+  }),
 });
 export const serverMessageSchema = z.discriminatedUnion('type', [
   snapshotMessageSchema,
@@ -123,6 +151,37 @@ export const startCommandSchema = z
     prompt: z.string().trim().min(1).max(32000),
   })
   .strict();
+const commandBase = {
+  type: z.literal('command'),
+  id: z.uuid(),
+  targetId: z.string().min(1).max(256),
+};
+export const executionCommandSchema = z.discriminatedUnion('operation', [
+  startCommandSchema,
+  z.object({ ...commandBase, operation: z.literal('resume') }).strict(),
+  z
+    .object({
+      ...commandBase,
+      operation: z.literal('input'),
+      prompt: z.string().trim().min(1).max(32000),
+    })
+    .strict(),
+  z
+    .object({
+      ...commandBase,
+      operation: z.literal('interrupt'),
+      turnId: z.string().min(1).max(256),
+    })
+    .strict(),
+  z
+    .object({
+      ...commandBase,
+      operation: z.literal('approval'),
+      approvalId: z.string().min(1).max(512),
+      decision: z.enum(['accept', 'decline']),
+    })
+    .strict(),
+]);
 export const clientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('refresh') }).strict(),
   z
@@ -131,7 +190,7 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
       sessionId: z.string().min(1).max(256),
     })
     .strict(),
-  startCommandSchema,
+  executionCommandSchema,
 ]);
 export type Activity = z.infer<typeof activitySchema>;
 export type Session = z.infer<typeof sessionSchema>;
@@ -139,6 +198,9 @@ export type Discovery = z.infer<typeof discoverySchema>;
 export type Workflow = z.infer<typeof workflowSchema>;
 export type CommandRecord = z.infer<typeof commandRecordSchema>;
 export type StartCommand = z.infer<typeof startCommandSchema>;
+export type ExecutionCommand = z.infer<typeof executionCommandSchema>;
+export type Approval = z.infer<typeof approvalSchema>;
+export type Auth = z.infer<typeof authSchema>;
 export type Integration = z.infer<typeof integrationSchema>;
 export type SnapshotMessage = z.infer<typeof snapshotMessageSchema>;
 export type ServerMessage = z.infer<typeof serverMessageSchema>;

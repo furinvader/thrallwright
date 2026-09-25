@@ -16,4 +16,12 @@ describe('formatJsonDocument', () => {
     expect(formatJsonDocument(' 1e400\n')).toBe('1e400');
     expect(formatJsonDocument(' null ')).toBe('null');
   });
+
+  it('uses the exact source for nesting or indentation beyond display limits', () => {
+    const deep = '['.repeat(81) + '900719925474099312345' + ']'.repeat(81);
+    expect(formatJsonDocument(`  ${deep}\n`)).toBe(deep);
+
+    const broad = '['.repeat(80) + '0,'.repeat(60_000) + '0' + ']'.repeat(80);
+    expect(formatJsonDocument(broad)).toBe(broad);
+  });
 });

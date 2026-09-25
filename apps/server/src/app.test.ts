@@ -30,6 +30,8 @@ class FakeCodex implements CodexAdapter {
     this.starts++;
   }
   async request(method: string) {
+    if (method === 'account/read')
+      return { account: null, requiresOpenaiAuth: false };
     if (['thread/list', 'thread/loaded/list'].includes(method))
       return { data: [], nextCursor: null };
     this.writes++;

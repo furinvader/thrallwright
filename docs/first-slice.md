@@ -199,22 +199,22 @@ Error handling can be simple, but the product must not silently convert these ca
 
 An implementation agent should be able to demonstrate all applicable items without explaining internal architecture.
 
-- [ ] The active workspace is visible.
-- [ ] One real harness integration is discoverable.
-- [ ] A real session can be started or discovered.
-- [ ] The session list never marks a historical-only session as live without evidence.
-- [ ] Observable activity for a selected session can be read.
-- [ ] Newly observed activity becomes visible.
-- [ ] At least one real directional control works.
-- [ ] Unsupported controls are not presented as working.
-- [ ] Waiting or approval-required work is distinguishable when the source provides that information.
-- [ ] A configured JSON workflow can be inspected generically.
-- [ ] Missing and malformed workflow state produce explicit errors.
-- [ ] Session context and workflow state are accessible in one coherent product flow.
-- [ ] Reopening the interface does not silently duplicate sessions.
-- [ ] Historical, disconnected, live, and unknown conditions are not conflated.
-- [ ] No feature claims access to private chain-of-thought.
-- [ ] The interface uses functional labels rather than fantasy replacements for operational concepts.
+- [x] The active workspace is visible.
+- [x] One real harness integration is discoverable.
+- [x] A real session can be started or discovered.
+- [x] The session list never marks a historical-only session as live without evidence.
+- [x] Observable activity for a selected session can be read.
+- [x] Newly observed activity becomes visible.
+- [x] At least one real directional control works.
+- [x] Unsupported controls are not presented as working.
+- [x] Waiting or approval-required work is distinguishable when the source provides that information.
+- [x] A configured JSON workflow can be inspected generically.
+- [x] Missing and malformed workflow state produce explicit errors.
+- [x] Session context and workflow state are accessible in one coherent product flow.
+- [x] Reopening the interface does not silently duplicate sessions.
+- [x] Historical, disconnected, live, and unknown conditions are not conflated.
+- [x] No feature claims access to private chain-of-thought.
+- [x] The interface uses functional labels rather than fantasy replacements for operational concepts.
 
 ## 10. Recommended test scenarios
 
@@ -280,3 +280,11 @@ Do not delay the first slice for:
 The first implementation is done when a second agent or developer can use Thrallwright to observe and direct a real agent working on Thrallwright, inspect a persistent workflow document for that work, encounter the expected failure states without ambiguity, and understand the codebase well enough to implement the next feature.
 
 The implementation should then be judged by actual use before expanding the abstraction surface.
+
+## 14. Verification record
+
+The initial Codex/JSON slice is implemented. Fast tests cover source errors, history/live overlap, stale capabilities, command persistence failures, approval races, and recovery without replay. Controlled Playwright scenarios cover the browser flow without model calls.
+
+The separate `just smoke --controls` browser check was run against real Codex 0.156.1 in the Thrallwright checkout on 2026-09-25. It verified session creation and observable output, JSON inspection and external updates, browser reload, service restart with retained context, explicit conversation resumption, new input, and a confirmed interruption. The sanitized report is in [workbench-controls.json](../tests/fixtures/codex/workbench-controls.json).
+
+Structured approvals are verified against the pinned protocol and controlled integration/browser fixtures. The live smoke run did not encounter an approval request. Arbitrary externally running CLI sessions are not attached; saved conversations remain historical until an explicit supported resume. Unsupported request types and session-wide grants have no approval control. See [Using the local workbench](workbench.md) for operational limits.

@@ -96,6 +96,7 @@ describe('WorkbenchConnection', () => {
       workspace: '/work',
       integration: { state: 'available', detail: 'Ready' },
       capabilities: { startSession: true },
+      auth: { state: 'ready', detail: 'Ready' },
     });
     expect(first.sent.map((message) => JSON.parse(message).type)).toEqual([
       'inspect',
@@ -106,6 +107,7 @@ describe('WorkbenchConnection', () => {
       workspace: '/work',
       integration: { state: 'available', detail: 'Ready' },
       capabilities: { startSession: true },
+      auth: { state: 'ready', detail: 'Ready' },
     });
     expect(first.sent).toHaveLength(1);
     connection.refresh();
@@ -124,13 +126,13 @@ describe('WorkbenchConnection', () => {
       operation: 'start',
       prompt: 'Investigate the failing test',
     });
-    expect(connection.localStarts()).toEqual([
-      { id: start.id, phase: 'sending' },
+    expect(connection.localCommands()).toEqual([
+      { id: start.id, operation: 'start', phase: 'sending' },
     ]);
 
     first.close();
-    expect(connection.localStarts()).toEqual([
-      { id: start.id, phase: 'uncertain' },
+    expect(connection.localCommands()).toEqual([
+      { id: start.id, operation: 'start', phase: 'uncertain' },
     ]);
     connection.retry();
     const replacement = FakeSocket.instances[1]!;
@@ -140,17 +142,19 @@ describe('WorkbenchConnection', () => {
       workspace: '/work',
       integration: { state: 'available', detail: 'Ready' },
       capabilities: { startSession: true },
+      auth: { state: 'ready', detail: 'Ready' },
     });
     expect(replacement.sent.map((message) => JSON.parse(message).type)).toEqual(
       ['inspect'],
     );
-    expect(connection.localStarts()).toHaveLength(1);
+    expect(connection.localCommands()).toHaveLength(1);
     replacement.receive({
       type: 'snapshot',
       revision: 4,
       workspace: '/work',
       integration: { state: 'available', detail: 'Ready' },
       capabilities: { startSession: true },
+      auth: { state: 'ready', detail: 'Ready' },
       commands: [
         {
           id: start.id,
@@ -165,7 +169,7 @@ describe('WorkbenchConnection', () => {
         },
       ],
     });
-    expect(connection.localStarts()).toEqual([]);
+    expect(connection.localCommands()).toEqual([]);
     connection.ngOnDestroy();
   });
 
@@ -178,6 +182,7 @@ describe('WorkbenchConnection', () => {
       workspace: '/work',
       integration: { state: 'available', detail: 'Ready' },
       capabilities: { startSession: true },
+      auth: { state: 'ready', detail: 'Ready' },
     });
     const requestId = connection.start('Inspect this workspace')!;
     socket.receive({
@@ -186,9 +191,10 @@ describe('WorkbenchConnection', () => {
       disposition: 'rejected',
       message: 'Cannot save command intent. Nothing was sent.',
     });
-    expect(connection.localStarts()).toEqual([
+    expect(connection.localCommands()).toEqual([
       {
         id: requestId,
+        operation: 'start',
         phase: 'rejected',
         detail: 'Cannot save command intent. Nothing was sent.',
       },
@@ -199,10 +205,96 @@ describe('WorkbenchConnection', () => {
       workspace: '/work',
       integration: { state: 'available', detail: 'Ready' },
       capabilities: { startSession: true },
+      auth: { state: 'ready', detail: 'Ready' },
     });
     expect(connection.problem()).toBeNull();
-    expect(connection.localStarts()[0]?.phase).toBe('rejected');
+    expect(connection.localCommands()[0]?.phase).toBe('rejected');
     expect(connection.start('Try another explicit request')).toBeTruthy();
+    connection.ngOnDestroy();
+  });
+
+  it('requires current capabilities and a typed pending approval before sending controls', () => {
+    const connection = new WorkbenchConnection();
+    const socket = FakeSocket.instances[0]!;
+    const approval = {
+      id: 'approval-1',
+      sessionId: 'session-1',
+      turnId: 'turn-1',
+      itemId: 'item-1',
+      kind: 'command',
+      method: 'item/commandExecution/requestApproval',
+      summary: 'echo test',
+      reason: null,
+      status: 'pending',
+      actionable: true,
+      observedAt: '2026-09-25T00:00:00Z',
+      detail: 'Review this command.',
+      commandId: null,
+    } as const;
+    const session = {
+      id: 'session-1',
+      title: 'Test session',
+      parentThreadId: null,
+      ephemeral: false,
+      owned: true,
+      controllable: true,
+      status: 'waiting',
+      freshness: 'live',
+      activeTurnId: 'turn-1',
+      latestTurnOutcome: null,
+      observedAt: '2026-09-25T00:00:00Z',
+      history: { state: 'unread', complete: false, detail: 'Unread' },
+      activities: [],
+      capabilities: { resume: false, input: false, interrupt: true },
+    } as const;
+    socket.receive({
+      type: 'snapshot',
+      revision: 1,
+      workspace: '/work',
+      integration: { state: 'available', detail: 'Ready' },
+      auth: { state: 'required', detail: 'Sign in through Codex.' },
+      sessions: [session],
+      approvals: [
+        approval,
+        { ...approval, id: 'unknown', kind: 'unsupported' },
+      ],
+    });
+    expect(connection.start('No auth')).toBeNull();
+    expect(connection.resume('session-1')).toBeNull();
+    expect(connection.input('session-1', 'No auth')).toBeNull();
+    expect(connection.interrupt('session-1', 'wrong-turn')).toBeNull();
+    expect(
+      connection.answerApproval(
+        { ...approval, id: 'unknown', kind: 'unsupported' },
+        'accept',
+      ),
+    ).toBeNull();
+    expect(socket.sent).toEqual([]);
+
+    const id = connection.answerApproval(approval, 'decline');
+    expect(id).toBeTruthy();
+    expect(JSON.parse(socket.sent[0]!)).toMatchObject({
+      id,
+      operation: 'approval',
+      targetId: 'session-1',
+      approvalId: 'approval-1',
+      decision: 'decline',
+    });
+    expect(connection.answerApproval(approval, 'accept')).toBeNull();
+    socket.close();
+    connection.retry();
+    const replacement = FakeSocket.instances[1]!;
+    replacement.receive({
+      type: 'snapshot',
+      revision: 2,
+      workspace: '/work',
+      integration: { state: 'available', detail: 'Ready' },
+      auth: { state: 'required', detail: 'Sign in through Codex.' },
+      sessions: [session],
+      approvals: [approval],
+    });
+    expect(replacement.sent).toEqual([]);
+    expect(connection.answerApproval(approval, 'accept')).toBeNull();
     connection.ngOnDestroy();
   });
 });

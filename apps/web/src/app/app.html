@@ -79,6 +79,9 @@
         </p>
         @if (backendState() === 'connected' && snapshot(); as current) {
         <p class="supporting-text">{{ current.integration.detail }}</p>
+        <p class="supporting-text">
+          Authentication: {{ current.auth.state }}. {{ current.auth.detail }}
+        </p>
         } @else {
         <p class="supporting-text">
           Connect to the local service to check Codex.
@@ -138,24 +141,82 @@
         </mat-card-content>
       </mat-card>
 
-      @if (connection.localStarts().length || visibleCommands().length) {
+      @if (connection.localCommands().length || visibleCommands().length) {
       <mat-card appearance="outlined" class="work-card command-card">
         <mat-card-header
-          ><mat-card-title>Start requests</mat-card-title></mat-card-header
+          ><mat-card-title>Command requests</mat-card-title></mat-card-header
         >
         <mat-card-content>
-          @for (request of connection.localStarts(); track request.id) {
+          @for (request of connection.localCommands(); track request.id) {
           <p class="command-line" role="status">
-            @switch (request.phase) { @case ('rejected') { Start failed: {{
-            request.detail }} } @case ('uncertain') { Outcome unknown: {{
-            request.detail || 'Connection closed before confirmation. Check
-            Sessions before starting again.' }} } @default { Sending start
-            request… } }
+            @switch (request.phase) { @case ('rejected') { {{
+            operationLabel(request.operation) }} failed: {{ request.detail }} }
+            @case ('uncertain') { {{ operationLabel(request.operation) }}
+            outcome unknown: {{ request.detail || 'Connection closed before
+            confirmation. Check current state before trying again.' }} }
+            @default { Sending {{ operationLabel(request.operation) }} request…
+            } }
           </p>
           } @for (command of visibleCommands(); track command.id) {
           <p class="command-line">
             <strong>{{ commandLabel(command) }}</strong> · {{ command.detail }}
           </p>
+          }
+        </mat-card-content>
+      </mat-card>
+      } @if (current.approvals.length) {
+      <mat-card appearance="outlined" class="work-card approvals-card">
+        <mat-card-header>
+          <mat-card-title>Approvals</mat-card-title>
+          <mat-card-subtitle
+            >Requests from the connected Codex session</mat-card-subtitle
+          >
+        </mat-card-header>
+        <mat-card-content>
+          @for (approval of current.approvals; track approval.id) {
+          <article class="approval-item">
+            <p class="approval-kind">
+              {{ approval.kind === 'fileChange' ? 'File change' : approval.kind
+              === 'command' ? 'Command' : 'Unsupported request' }} · {{
+              approval.status }}
+            </p>
+            <p class="approval-target">
+              Session: {{ approval.sessionId || 'unknown' }} · Turn: {{
+              approval.turnId || 'unknown' }} · Item: {{ approval.itemId ||
+              'unknown' }}
+            </p>
+            <pre class="approval-summary">{{ approval.summary }}</pre>
+            @if (approval.reason) {
+            <p class="supporting-text">Reason: {{ approval.reason }}</p>
+            }
+            <p class="supporting-text">{{ approval.detail }}</p>
+            @if (canInspectApproval(approval)) {
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="selectSession(approval.sessionId!)"
+            >
+              View session activity
+            </button>
+            } @if (canAnswer(approval)) {
+            <div class="approval-actions">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="answer(approval, 'decline')"
+              >
+                Decline
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                (click)="answer(approval, 'accept')"
+              >
+                Allow once
+              </button>
+            </div>
+            }
+          </article>
           }
         </mat-card-content>
       </mat-card>
@@ -234,7 +295,48 @@
             {{ session.id }} · {{ session.owned ? 'Started in this workbench' :
             'Discovered session' }} · Observed {{ session.observedAt }}
           </p>
-          @if (session.history.state === 'loading') {
+          @if (session.capabilities?.resume || session.capabilities?.input ||
+          session.capabilities?.interrupt) {
+          <div class="session-controls">
+            @if (session.capabilities.resume) {
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="!canResume()"
+              (click)="resume()"
+            >
+              Resume saved conversation
+            </button>
+            } @if (session.capabilities.interrupt && session.activeTurnId) {
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="!canInterrupt()"
+              (click)="interrupt()"
+            >
+              Interrupt active turn {{ session.activeTurnId }}
+            </button>
+            }
+          </div>
+          @if (session.capabilities.input) {
+          <form class="input-form" (submit)="sendInput($event)">
+            <mat-form-field appearance="outline" class="prompt-field">
+              <mat-label>Input for this idle session</mat-label>
+              <textarea
+                matInput
+                rows="3"
+                [value]="inputPrompt()"
+                (input)="updateInputPrompt($event)"
+                placeholder="Send a new task to the selected session"
+              ></textarea>
+            </mat-form-field>
+            <button mat-flat-button type="submit" [disabled]="!canInput()">
+              Send input
+            </button>
+          </form>
+          } } @if (actionError(); as error) {
+          <p class="inline-error" role="alert">{{ error }}</p>
+          } @if (session.history.state === 'loading') {
           <p class="supporting-text">Loading activity…</p>
           } @if (session.history.state === 'unavailable' ||
           session.history.state === 'deleted') {

@@ -1,6 +1,6 @@
 # ADR 0002: Angular for the browser interface
 
-Status: Accepted, 2026-09-24. Implementation is pending.
+Status: Accepted, 2026-09-24. Implemented for the first slice; see the [workbench guide](../workbench.md) and [integration evidence](../integration/codex.md).
 
 ## Context
 

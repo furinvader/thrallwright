@@ -1,12 +1,43 @@
-import { BehaviorSubject, Subscription } from 'rxjs';
+import { BehaviorSubject, Subscription, type Observable } from 'rxjs';
 import { z } from 'zod';
-import type { CommandRecord, StartCommand } from '@thrallwright/contracts';
+import type {
+  Approval,
+  CommandRecord,
+  ExecutionCommand,
+  Session,
+} from '@thrallwright/contracts';
 import { CodexRpcError, type CodexAdapter } from '../../integrations/codex.js';
 import type { CommandJournal } from './journal.js';
+import { sessionCapabilities, outcomeTransition } from './policy.js';
 
 interface SessionCommands {
   acceptStartedThread(thread: unknown): unknown;
   acceptTurn(threadId: string, turn: unknown): unknown;
+  state$?: Observable<unknown>;
+  getSnapshot?(): { sessions: Session[] };
+  getTurnOutcome?(threadId: string, turnId: string): string | null | undefined;
+  readHistory?(sessionId: string): Promise<void>;
+}
+interface ApprovalCommands {
+  getSnapshot(): Approval[];
+  resolutions$: Observable<{
+    approvalId: string;
+    commandId?: string;
+    reason: 'resolved' | 'stale';
+  }>;
+  claim(
+    approvalId: string,
+    decision: 'accept' | 'decline',
+    commandId: string,
+  ): {
+    rpcId: string | number;
+    response: { decision: 'accept' | 'decline' };
+    threadId: string;
+    turnId: string;
+  };
+  validateClaim(approvalId: string, commandId: string): unknown;
+  releaseBeforeWrite(approvalId: string, commandId: string): void;
+  markUncertain(approvalId: string, commandId: string): void;
 }
 interface Options {
   workspace: string;
@@ -14,6 +45,9 @@ interface Options {
   journal: CommandJournal;
   sessions: SessionCommands;
   initial: CommandRecord[];
+  approvals?: ApprovalCommands;
+  authenticated?(): boolean;
+  confirmationMs?: number;
   saveSessions(): Promise<void>;
   storageFailure(message: string): void;
 }
@@ -25,7 +59,10 @@ const turnResult = z.object({
 });
 const completed = z.object({
   threadId: z.string(),
-  turn: z.object({ id: z.string(), status: z.string() }),
+  turn: z.object({
+    id: z.string(),
+    status: z.enum(['completed', 'interrupted', 'failed']),
+  }),
 });
 
 /** One command owner. The journal is evidence, never a retry queue. */
@@ -39,6 +76,10 @@ export function createCommandService(options: Options) {
   >();
   const updates = new Map<string, Promise<void>>();
   const terminal = new Map<string, string>();
+  const targetLocks = new Set<string>();
+  const confirmationTimers = new Map<string, NodeJS.Timeout>();
+  const approvalResolutions = new Map<string, 'resolved' | 'stale'>();
+  const reconciling = new Set<string>();
   let available = false;
   let closed = false;
   const publish = () =>
@@ -85,9 +126,87 @@ export function createCommandService(options: Options) {
     );
     await next;
   }
+  function reconcile() {
+    for (const record of records.values()) {
+      const threadId = record.resultSessionId ?? record.targetId;
+      if (
+        !threadId ||
+        !record.turnId ||
+        !['start', 'input', 'interrupt'].includes(record.operation) ||
+        !['accepted', 'uncertain'].includes(record.phase) ||
+        reconciling.has(record.id)
+      )
+        continue;
+      const outcome =
+        terminal.get(JSON.stringify([threadId, record.turnId])) ??
+        options.sessions.getTurnOutcome?.(threadId, record.turnId);
+      if (!outcome || outcome === 'inProgress') continue;
+      reconciling.add(record.id);
+      clearTimeout(confirmationTimers.get(record.id));
+      confirmationTimers.delete(record.id);
+      void change(record.id, (current) => ({
+        ...current,
+        ...outcomeTransition(current.operation, outcome),
+      }))
+        .catch(() => {})
+        .finally(() => reconciling.delete(record.id));
+    }
+  }
+  if (options.sessions.state$)
+    subscriptions.add(options.sessions.state$.subscribe(reconcile));
+  if (options.approvals)
+    subscriptions.add(
+      options.approvals.resolutions$.subscribe((event) => {
+        if (!event.commandId) return;
+        approvalResolutions.set(event.commandId, event.reason);
+        if (approvalResolutions.size > 500)
+          approvalResolutions.delete(approvalResolutions.keys().next().value!);
+        const record = records.get(event.commandId);
+        if (!record || record.operation !== 'approval') return;
+        clearTimeout(confirmationTimers.get(record.id));
+        confirmationTimers.delete(record.id);
+        void change(record.id, (current) => ({
+          ...current,
+          phase: event.reason === 'resolved' ? 'completed' : 'uncertain',
+          detail:
+            event.reason === 'resolved'
+              ? 'Codex cleared the approval request. The underlying action outcome is shown separately in Activity.'
+              : 'The approval request is no longer current. Delivery is uncertain; nothing will be resent.',
+        })).catch(() => {});
+      }),
+    );
+  const awaitConfirmation = (id: string) => {
+    confirmationTimers.set(
+      id,
+      setTimeout(() => {
+        confirmationTimers.delete(id);
+        const record = records.get(id);
+        if (record?.phase !== 'accepted') return;
+        if (record.approvalId)
+          options.approvals?.markUncertain(record.approvalId, id);
+        void change(id, (current) => ({
+          ...current,
+          phase: 'uncertain',
+          detail:
+            'Codex did not confirm the operation in time. Inspect current activity; nothing will be resent.',
+        })).catch(() => {});
+      }, options.confirmationMs ?? 30_000),
+    );
+    confirmationTimers.get(id)!.unref();
+  };
   subscriptions.add(
     options.codex.state$.subscribe((integration) => {
       available = integration.state === 'available';
+      if (available) {
+        const targets = new Set(
+          [...records.values()]
+            .filter((record) => record.phase === 'uncertain' && record.turnId)
+            .map((record) => record.resultSessionId ?? record.targetId)
+            .filter((id): id is string => !!id),
+        );
+        for (const target of targets)
+          void options.sessions.readHistory?.(target).catch(() => {});
+      }
       if (!available)
         for (const record of records.values())
           if (record.phase === 'accepted') {
@@ -113,21 +232,11 @@ export function createCommandService(options: Options) {
       const key = JSON.stringify([threadId, turn.id]);
       terminal.set(key, turn.status);
       if (terminal.size > 500) terminal.delete(terminal.keys().next().value!);
-      for (const record of records.values())
-        if (
-          record.resultSessionId === threadId &&
-          record.turnId === turn.id &&
-          ['accepted', 'uncertain'].includes(record.phase)
-        )
-          void change(record.id, (current) => ({
-            ...current,
-            phase: 'completed',
-            detail: `Codex confirmed the initial turn ${turn.status}.`,
-          })).catch(() => {});
+      reconcile();
     }),
   );
 
-  async function run(command: StartCommand) {
+  async function run(command: ExecutionCommand) {
     let created: boolean;
     let record: CommandRecord;
     try {
@@ -149,17 +258,34 @@ export function createCommandService(options: Options) {
       }));
       return;
     }
+    if (command.operation !== 'start') {
+      await runTarget(command);
+      return;
+    }
+    if (options.authenticated && !options.authenticated()) {
+      await change(record.id, (current) => ({
+        ...current,
+        phase: 'rejected',
+        detail: 'Codex authentication is not ready. Nothing was sent.',
+      }));
+      return;
+    }
     // If this persistence fails, the harness call below is never reached.
     await change(record.id, (current) => ({
       ...current,
       phase: 'dispatching',
       detail: 'Creating a Codex session.',
     }));
-    if (!available || closed) {
+    if (
+      !available ||
+      closed ||
+      (options.authenticated && !options.authenticated())
+    ) {
       await change(record.id, (current) => ({
         ...current,
         phase: 'rejected',
-        detail: 'Codex disconnected before dispatch. Nothing was sent.',
+        detail:
+          'Codex availability or authentication changed before dispatch. Nothing was sent.',
       }));
       return;
     }
@@ -177,7 +303,14 @@ export function createCommandService(options: Options) {
         throw new Error(
           'The created session could not be verified in this workspace. Initial input was not sent.',
         );
-      await options.saveSessions();
+      try {
+        await options.saveSessions();
+      } catch (error) {
+        options.storageFailure(
+          'Session metadata could not be saved. Check application storage.',
+        );
+        throw error;
+      }
       if (!available || closed)
         throw new Error('Codex disconnected after creating the session.');
       const response = turnResult.parse(
@@ -202,6 +335,7 @@ export function createCommandService(options: Options) {
               : 'Input may have been accepted; Codex disconnected before confirmation.',
         };
       });
+      reconcile();
     } catch (error) {
       await change(record.id, (current) => ({
         ...current,
@@ -210,10 +344,194 @@ export function createCommandService(options: Options) {
       }));
     }
   }
+  function verifyTarget(
+    command: Exclude<ExecutionCommand, { operation: 'start' }>,
+  ) {
+    if (!available || closed)
+      throw new Error('Codex is unavailable. Nothing was sent.');
+    const session = options.sessions
+      .getSnapshot?.()
+      .sessions.find((item) => item.id === command.targetId);
+    if (!session)
+      throw new Error('The target session is unknown. Nothing was sent.');
+    const caps = sessionCapabilities(
+      session,
+      available,
+      options.authenticated?.() ?? true,
+    );
+    if (command.operation === 'resume' && !caps.resume)
+      throw new Error('This conversation cannot currently be resumed.');
+    if (command.operation === 'input' && !caps.input)
+      throw new Error(
+        'Input requires an idle session controlled by this connection.',
+      );
+    if (
+      command.operation === 'interrupt' &&
+      (!caps.interrupt || command.turnId !== session.activeTurnId)
+    )
+      throw new Error(
+        'The target turn is no longer the active, controllable turn.',
+      );
+    if (
+      command.operation === 'approval' &&
+      options.approvals
+        ?.getSnapshot()
+        .find((item) => item.id === command.approvalId)?.sessionId !==
+        command.targetId
+    )
+      throw new Error('The approval does not belong to this target session.');
+    return session;
+  }
+  async function runTarget(
+    command: Exclude<ExecutionCommand, { operation: 'start' }>,
+  ) {
+    let dispatched = false;
+    let locked = false;
+    let claimed = false;
+    try {
+      verifyTarget(command);
+      if (command.operation === 'input' || command.operation === 'resume') {
+        if (targetLocks.has(command.targetId))
+          throw new Error(
+            'Another session operation is still being submitted.',
+          );
+        targetLocks.add(command.targetId);
+        locked = true;
+      }
+      let claim: ReturnType<ApprovalCommands['claim']> | undefined;
+      if (command.operation === 'approval') {
+        if (!options.approvals)
+          throw new Error('Approval responses are unavailable.');
+        claim = options.approvals.claim(
+          command.approvalId,
+          command.decision,
+          command.id,
+        );
+        claimed = true;
+      }
+      await change(command.id, (current) => ({
+        ...current,
+        phase: 'dispatching',
+        detail: `Submitting ${command.operation} to the selected Codex session.`,
+        resultSessionId: command.targetId,
+        turnId: claim?.turnId ?? current.turnId,
+      }));
+      verifyTarget(command);
+      if (command.operation === 'approval') {
+        if (!options.approvals!.validateClaim(command.approvalId, command.id))
+          throw new Error(
+            'The approval expired before dispatch. Nothing was sent.',
+          );
+        dispatched = true;
+        options.codex.respond(claim!.rpcId, claim!.response);
+        await change(command.id, (current) => {
+          const resolved = approvalResolutions.get(command.id);
+          return {
+            ...current,
+            phase:
+              resolved === 'resolved'
+                ? 'completed'
+                : resolved === 'stale' || !available
+                  ? 'uncertain'
+                  : 'accepted',
+            detail:
+              resolved === 'resolved'
+                ? 'Codex cleared the approval request. The underlying action outcome is shown separately in Activity.'
+                : 'Approval response written; waiting for Codex to clear the request.',
+          };
+        });
+        if (records.get(command.id)?.phase === 'accepted')
+          awaitConfirmation(command.id);
+      } else if (command.operation === 'resume') {
+        dispatched = true;
+        const result = threadResult.parse(
+          await options.codex.request('thread/resume', {
+            threadId: command.targetId,
+          }),
+        );
+        if (
+          result.thread.id !== command.targetId ||
+          !options.sessions.acceptStartedThread(result.thread)
+        )
+          throw new Error(
+            'The resumed session could not be verified in this workspace.',
+          );
+        try {
+          await options.saveSessions();
+        } catch (error) {
+          options.storageFailure(
+            'Session metadata could not be saved. Check application storage.',
+          );
+          throw error;
+        }
+        await change(command.id, (current) => ({
+          ...current,
+          phase: 'completed',
+          detail:
+            'Codex resumed the saved conversation. No new input was sent.',
+        }));
+        void options.sessions.readHistory?.(command.targetId).catch(() => {});
+      } else if (command.operation === 'input') {
+        dispatched = true;
+        const result = turnResult.parse(
+          await options.codex.request('turn/start', {
+            threadId: command.targetId,
+            input: [{ type: 'text', text: command.prompt }],
+          }),
+        );
+        options.sessions.acceptTurn(command.targetId, result.turn);
+        await change(command.id, (current) => ({
+          ...current,
+          turnId: result.turn.id,
+          phase: available ? 'accepted' : 'uncertain',
+          detail: available
+            ? 'Codex accepted the input; execution is not yet confirmed complete.'
+            : 'Input may have been accepted; Codex disconnected before confirmation.',
+        }));
+        reconcile();
+      } else {
+        dispatched = true;
+        await options.codex.request('turn/interrupt', {
+          threadId: command.targetId,
+          turnId: command.turnId,
+        });
+        await change(command.id, (current) =>
+          current.phase === 'completed'
+            ? current
+            : {
+                ...current,
+                phase: available ? 'accepted' : 'uncertain',
+                detail:
+                  'Codex acknowledged the interrupt request; waiting for the target turn outcome.',
+              },
+        );
+        reconcile();
+        if (records.get(command.id)?.phase === 'accepted')
+          awaitConfirmation(command.id);
+      }
+    } catch (error) {
+      if (command.operation === 'approval' && claimed) {
+        if (dispatched)
+          options.approvals?.markUncertain(command.approvalId, command.id);
+        else
+          options.approvals?.releaseBeforeWrite(command.approvalId, command.id);
+      }
+      await change(command.id, (current) => ({
+        ...current,
+        phase:
+          !dispatched || error instanceof CodexRpcError
+            ? 'rejected'
+            : 'uncertain',
+        detail: `${!dispatched ? 'Nothing was sent: ' : error instanceof CodexRpcError ? 'Codex rejected the operation: ' : 'The outcome is uncertain: '}${error instanceof Error ? error.message : 'operation failed'}. No automatic retry will occur.`,
+      }));
+    } finally {
+      if (locked) targetLocks.delete(command.targetId);
+    }
+  }
   return {
     state$: state.asObservable(),
     getSnapshot: () => state.value,
-    handle(command: StartCommand) {
+    handle(command: ExecutionCommand) {
       const fingerprint = JSON.stringify(command);
       const active = running.get(command.id);
       if (active)
@@ -230,6 +548,8 @@ export function createCommandService(options: Options) {
     },
     async close() {
       closed = true;
+      for (const timer of confirmationTimers.values()) clearTimeout(timer);
+      confirmationTimers.clear();
       await Promise.allSettled(
         [...running.values()].map((item) => item.promise),
       );

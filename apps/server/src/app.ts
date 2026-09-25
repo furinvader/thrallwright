@@ -16,6 +16,10 @@ import { createWorkflowSource } from './features/workflow/workflow.js';
 import { observationStore } from './storage/observations.js';
 import { commandJournal } from './features/commands/journal.js';
 import { createCommandService } from './features/commands/commands.js';
+import { sessionCapabilities } from './features/commands/policy.js';
+import { createAuthService } from './features/integration/auth.js';
+import { createApprovalService } from './features/approvals/approvals.js';
+import { approvalStore } from './storage/approvals.js';
 
 export interface ApplicationOptions {
   workspace: string;
@@ -35,6 +39,28 @@ export async function createApplication(options: ApplicationOptions) {
   let sessions: ReturnType<typeof createSessionService> | undefined;
   let commands: ReturnType<typeof createCommandService> | undefined;
   let workflow: ReturnType<typeof createWorkflowSource> | undefined;
+  let auth: ReturnType<typeof createAuthService> | undefined;
+  let approvals: ReturnType<typeof createApprovalService> | undefined;
+  const approvalCache = approvalStore(db, options.workspace);
+  let approvalSaves: Promise<void> = Promise.resolve();
+  const saveApprovals = () => {
+    if (!approvals || !sessions) return Promise.resolve();
+    const ephemeral = new Set(
+      sessions
+        .getSnapshot()
+        .sessions.filter((session) => session.ephemeral)
+        .map((session) => session.id),
+    );
+    const snapshot = approvals
+      .getSnapshot()
+      .filter(
+        (approval) => !approval.sessionId || !ephemeral.has(approval.sessionId),
+      );
+    approvalSaves = approvalSaves
+      .catch(() => {})
+      .then(() => approvalCache.save(snapshot));
+    return approvalSaves;
+  };
   let saveQueue: Promise<void> = Promise.resolve();
   const store = observationStore(db, options.workspace);
   const saveSessions = () => {
@@ -45,18 +71,28 @@ export async function createApplication(options: ApplicationOptions) {
   };
   app.addHook('onClose', async () => {
     subscriptions.unsubscribe();
-    try {
-      await options.codex.close();
-    } finally {
+    const errors: unknown[] = [];
+    const attempt = async (action: () => unknown) => {
       try {
-        await commands?.close();
-        sessions?.close();
-        await workflow?.close();
-        await saveSessions();
-      } finally {
-        await db.destroy();
+        await action();
+      } catch (error) {
+        errors.push(error);
       }
-    }
+    };
+    await attempt(() => options.codex.close());
+    await attempt(() => commands?.close());
+    await attempt(() => auth?.close());
+    await attempt(() => approvals?.close());
+    await attempt(() => sessions?.close());
+    await attempt(() => workflow?.close());
+    await attempt(saveSessions);
+    await attempt(saveApprovals);
+    await attempt(() => db.destroy());
+    if (errors.length)
+      throw new AggregateError(
+        errors,
+        'Application shutdown could not finish all storage or connection cleanup.',
+      );
   });
   try {
     const now = new Date().toISOString();
@@ -101,6 +137,12 @@ export async function createApplication(options: ApplicationOptions) {
       initialSessions: await store.load(),
     });
     workflow = createWorkflowSource(workflowPath);
+    auth = createAuthService({ codex: options.codex });
+    approvals = createApprovalService({
+      codex: options.codex,
+      sessions,
+      initialApprovals: await approvalCache.load(),
+    });
     const journal = commandJournal(db, options.workspace);
     commands = createCommandService({
       workspace: options.workspace,
@@ -108,6 +150,8 @@ export async function createApplication(options: ApplicationOptions) {
       sessions,
       journal,
       initial: await journal.load(),
+      approvals,
+      authenticated: () => auth!.getSnapshot().state === 'ready',
       saveSessions,
       storageFailure,
     });
@@ -116,14 +160,29 @@ export async function createApplication(options: ApplicationOptions) {
       revision,
       workspace: options.workspace,
       integration,
-      sessions: sessions!.getSnapshot().sessions,
+      sessions: sessions!.getSnapshot().sessions.map((session) => ({
+        ...session,
+        capabilities: sessionCapabilities(
+          session,
+          integration.state === 'available' && !storageProblem,
+          auth!.getSnapshot().state === 'ready',
+        ),
+      })),
       discovery: sessions!.getSnapshot().discovery,
       workflow: workflow!.getSnapshot(),
       commands: commands!.getSnapshot(),
       capabilities: {
-        startSession: integration.state === 'available' && !storageProblem,
+        startSession:
+          integration.state === 'available' &&
+          auth!.getSnapshot().state === 'ready' &&
+          !storageProblem,
       },
       storageProblem,
+      auth: auth!.getSnapshot(),
+      approvals: approvals!.getSnapshot().map((approval) => ({
+        ...approval,
+        actionable: approval.actionable && !storageProblem,
+      })),
     });
 
     // Local control endpoints reject remote browser origins and DNS rebinding hosts.
@@ -185,9 +244,11 @@ export async function createApplication(options: ApplicationOptions) {
           } else if (message.type === 'inspect') {
             void sessions!.readHistory(message.sessionId).catch(report);
           } else {
-            void Promise.all([sessions!.refresh(), workflow!.refresh()]).catch(
-              report,
-            );
+            void Promise.all([
+              sessions!.refresh(),
+              workflow!.refresh(),
+              auth!.refresh(),
+            ]).catch(report);
             socket.send(JSON.stringify(snapshot()));
           }
         } catch {
@@ -219,6 +280,17 @@ export async function createApplication(options: ApplicationOptions) {
     subscriptions.add(sessions.state$.subscribe(changed));
     subscriptions.add(workflow.state$.subscribe(changed));
     subscriptions.add(commands.state$.subscribe(changed));
+    subscriptions.add(auth.state$.subscribe(changed));
+    subscriptions.add(approvals.state$.subscribe(changed));
+    subscriptions.add(
+      approvals.state$.pipe(auditTime(500)).subscribe(() => {
+        void saveApprovals().catch(() =>
+          storageFailure(
+            'Approval history could not be saved. Check application storage.',
+          ),
+        );
+      }),
+    );
     subscriptions.add(
       sessions.state$.pipe(auditTime(500)).subscribe(() => {
         void saveSessions().catch(() =>

@@ -24,6 +24,7 @@ experimental-features = nix-command flakes
 nix develop
 just setup
 just dev
+just dev --workflow tasks.json
 ```
 
 `just setup` installs exactly the lockfile dependencies and compiles shared
@@ -33,7 +34,9 @@ server. It waits for both servers to become ready and stops their process groups
 on Ctrl+C. The browser server listens at `http://127.0.0.1:4200`; the API is at
 `http://127.0.0.1:4318`. Development uses the checkout as its workspace and an
 isolated `.thrallwright-dev/` profile, so it does not mix development records
-with the normal application profile.
+with the normal application profile. Extra `just dev` arguments go to the
+service CLI; `--workflow tasks.json` reads a JSON file relative to the checkout
+workspace and saves that selection in the development profile.
 
 Run `just` to list recipes. Routine checks and builds are:
 
@@ -62,6 +65,11 @@ real, logged-in Codex CLI. It starts one model turn and can consume paid model
 usage, so run it deliberately rather than as part of ordinary CI. The default
 workspace is the current directory; pass `--workspace` to use a specific
 project. The check creates a temporary application profile and workflow file.
+`just smoke --controls [--workspace PATH]` extends that check through a real
+service restart using the same temporary profile and workflow reference,
+explicit Resume, Send, and Interrupt. It starts three model turns in total,
+including one that is interrupted, and may consume more model usage. Neither
+smoke command runs in ordinary CI.
 
 Noninteractive CI commands use the same interface after setup:
 
@@ -84,6 +92,11 @@ nix run . -- --workspace /path/to/project --workflow tasks.json
 nix run . -- --workspace ../project --no-open
 ```
 
+To keep `thrallwright` on the command line, install the checkout into a Nix
+profile with `nix profile add .#thrallwright`, then run
+`thrallwright --workspace /path/to/project --workflow tasks.json`. Older Nix
+versions call this profile subcommand `install`.
+
 The command builds the frontend, backend, production JavaScript dependencies,
 and native SQLite driver into one Nix package. It invokes the pinned Node and
 Codex executables by absolute path; it does not prepend them to the service's
@@ -105,7 +118,11 @@ unset, those base directories default to `~/.config`, `~/.local/share`,
 Thrallwright's files together at an explicit path. This does not relocate
 Codex's own storage or authentication. To log in with the managed Codex CLI
 without a global installation, run `nix develop -c codex login` before using
-actions that require authentication.
+actions that require authentication. The workbench checks Codex's auth status
+with a read-only request and never copies account details into its database.
+For a provider that does not require OpenAI authentication, a missing OpenAI
+account does not block its controls. See [the workbench guide](workbench.md)
+for explicit Resume, Send, Interrupt, and approval behavior.
 
 Nix packages only Linux for now. The current flake has outputs for x86_64 and
 aarch64 Linux; CI checks x86_64 Linux. Chromium and Codex are large parts of the

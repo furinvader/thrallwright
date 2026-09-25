@@ -25,6 +25,7 @@ export interface SessionsState {
   sessions: Session[];
   discovery: Discovery;
 }
+export type TurnOutcome = 'completed' | 'interrupted' | 'failed';
 interface Options {
   workspace: string;
   codex: CodexAdapter;
@@ -37,7 +38,7 @@ interface Entry {
   statusRevision: number;
   historyToken: number;
   ownedEpoch: number | null;
-  terminalTurns: Set<string>;
+  terminalTurns: Map<string, { outcome: TurnOutcome; revision: number }>;
 }
 const MAX_SESSIONS = 100;
 const threadIdParams = z.object({ threadId: sourceId });
@@ -148,6 +149,39 @@ export class SessionService {
     };
   }
 
+  /** Exact terminal evidence read or received during this connection only. */
+  getTurnOutcome(sessionId: string, turnId: string): TurnOutcome | undefined {
+    if (this.closed || !this.connected) return undefined;
+    return this.entries.get(sessionId)?.terminalTurns.get(turnId)?.outcome;
+  }
+
+  private recordOutcome(
+    entry: Entry,
+    turnId: string,
+    outcome: TurnOutcome,
+    readRevision?: number,
+  ) {
+    const previous = entry.terminalTurns.get(turnId);
+    if (
+      previous &&
+      readRevision !== undefined &&
+      previous.revision > readRevision
+    )
+      return;
+    entry.terminalTurns.delete(turnId);
+    entry.terminalTurns.set(turnId, {
+      outcome,
+      revision: readRevision ?? ++this.revision,
+    });
+    if (entry.terminalTurns.size > MAX_ACTIVITIES) {
+      // A long, delayed history response must not evict a newer live outcome.
+      const oldest = [...entry.terminalTurns].reduce((first, candidate) =>
+        candidate[1].revision < first[1].revision ? candidate : first,
+      );
+      entry.terminalTurns.delete(oldest[0]);
+    }
+  }
+
   private entry(session: Session): Entry {
     return {
       session,
@@ -155,7 +189,7 @@ export class SessionService {
       statusRevision: 0,
       historyToken: 0,
       ownedEpoch: null,
-      terminalTurns: new Set(),
+      terminalTurns: new Map(),
     };
   }
   private publish() {
@@ -188,6 +222,7 @@ export class SessionService {
     }
     for (const entry of this.entries.values()) {
       entry.ownedEpoch = null;
+      entry.terminalTurns.clear();
       entry.historyToken++;
       entry.session = {
         ...entry.session,
@@ -424,6 +459,16 @@ export class SessionService {
       if (thread.id !== sessionId || thread.cwd !== this.options.workspace)
         throw new Error('Source identity mismatch');
       const normalized = normalizeHistory(thread.turns, this.now());
+      for (const rawTurn of thread.turns ?? []) {
+        const parsedTurn = turnSchema.safeParse(rawTurn);
+        if (parsedTurn.success && parsedTurn.data.status !== 'inProgress')
+          this.recordOutcome(
+            entry,
+            parsedTurn.data.id,
+            parsedTurn.data.status,
+            revision,
+          );
+      }
       const changed = new Map(
         entry.session.activities
           .filter(
@@ -513,9 +558,7 @@ export class SessionService {
     if (entry.terminalTurns.has(turn.id) && turn.status === 'inProgress')
       return;
     if (turn.status !== 'inProgress') {
-      entry.terminalTurns.add(turn.id);
-      if (entry.terminalTurns.size > MAX_ACTIVITIES)
-        entry.terminalTurns.delete(entry.terminalTurns.values().next().value!);
+      this.recordOutcome(entry, turn.id, turn.status);
     }
     if (
       turn.status === 'inProgress' ||

@@ -13,8 +13,8 @@ setup:
     pnpm --filter @thrallwright/contracts build
 
 # Start contracts, server, and browser development processes together.
-dev:
-    pnpm dev
+dev *args:
+    pnpm dev "$@"
 
 # Check formatting, lint, types/templates, and fast tests.
 check:
