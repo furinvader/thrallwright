@@ -201,6 +201,51 @@ button {
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
+.approval-item {
+  padding: 12px 0;
+  border-top: 1px solid #e1e7e2;
+}
+.approval-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.approval-kind {
+  margin: 0;
+  color: #436d5f;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.approval-target {
+  margin: 7px 0 0;
+  color: #5d7072;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.approval-summary {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  font-size: 13px;
+}
+.approval-actions,
+.session-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.approval-actions button,
+.session-controls button {
+  margin: 0;
+}
+.input-form {
+  margin-top: 18px;
+}
+.input-form button {
+  margin-top: 0;
+}
 .inline-error {
   margin: 14px 0 0;
   color: #934d43;

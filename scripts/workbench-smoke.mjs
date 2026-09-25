@@ -11,7 +11,11 @@ import { CodexProcess } from '../apps/server/dist/integrations/codex.js';
 import { storagePaths } from '../apps/server/dist/storage/paths.js';
 
 const { values } = parseArgs({
-  options: { workspace: { type: 'string' }, output: { type: 'string' } },
+  options: {
+    workspace: { type: 'string' },
+    output: { type: 'string' },
+    controls: { type: 'boolean' },
+  },
 });
 const workspace = await realpath(resolve(values.workspace ?? process.cwd()));
 const temporary = await mkdtemp(
@@ -25,21 +29,28 @@ await writeFile(
     checks: ['live activity', 'workflow', 'reload'],
   }),
 );
-const codex = new CodexProcess(
-  process.env.THRALLWRIGHT_CODEX_EXECUTABLE ?? 'codex',
-  workspace,
-);
 const execution = [];
-const originalRequest = codex.request.bind(codex);
-codex.request = (method, params) => {
-  if (
-    ['thread/start', 'thread/resume', 'turn/start', 'turn/interrupt'].includes(
-      method,
+function makeCodex() {
+  const adapter = new CodexProcess(
+    process.env.THRALLWRIGHT_CODEX_EXECUTABLE ?? 'codex',
+    workspace,
+  );
+  const originalRequest = adapter.request.bind(adapter);
+  adapter.request = (method, params) => {
+    if (
+      [
+        'thread/start',
+        'thread/resume',
+        'turn/start',
+        'turn/interrupt',
+      ].includes(method)
     )
-  )
-    execution.push(method);
-  return originalRequest(method, params);
-};
+      execution.push(method);
+    return originalRequest(method, params);
+  };
+  return adapter;
+}
+let codex = makeCodex();
 let app;
 let browser;
 const report = {
@@ -110,6 +121,80 @@ try {
   report.checks.push(
     'External scalar/null workflow updates and browser reload preserved observation without execution.',
   );
+  if (values.controls) {
+    // Restart the actual service, retaining its profile and externally owned source.
+    await app.close();
+    codex = makeCodex();
+    app = await createApplication({
+      workspace,
+      paths: storagePaths(join(temporary, 'profile')),
+      codex,
+      webRoot: fileURLToPath(
+        new URL('../apps/web/dist/browser/', import.meta.url),
+      ),
+    });
+    await app.listen({
+      host: '127.0.0.1',
+      port: Number(new URL(address).port),
+    });
+    await expect(
+      page.getByRole('button', { name: 'Resume saved conversation' }),
+    ).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByLabel('Workflow JSON')).toHaveText('null');
+    if (execution.length !== prior)
+      throw new Error('Service restart replayed an execution command.');
+    await page
+      .getByRole('button', { name: 'Resume saved conversation' })
+      .click();
+    await expect(page.getByLabel('Input for this idle session')).toBeVisible({
+      timeout: 30_000,
+    });
+    await page
+      .getByLabel('Input for this idle session')
+      .fill(
+        'Reply exactly THRALLWRIGHT_INPUT_OK. Do not run tools or change files.',
+      );
+    await page.getByRole('button', { name: 'Send input', exact: true }).click();
+    await expect(
+      page
+        .locator('.activity-item')
+        .filter({
+          has: page.locator('.activity-kind', { hasText: 'assistant' }),
+        })
+        .last(),
+    ).toContainText('THRALLWRIGHT_INPUT_OK', { timeout: 120_000 });
+    await expect(page.getByLabel('Input for this idle session')).toBeVisible({
+      timeout: 30_000,
+    });
+    await page
+      .getByLabel('Input for this idle session')
+      .fill(
+        'Output the integers from 1 through 10000, one per line. Do not run tools or change files.',
+      );
+    await page.getByRole('button', { name: 'Send input', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: /Interrupt active turn/ }),
+    ).toBeEnabled({ timeout: 30_000 });
+    await page.getByRole('button', { name: /Interrupt active turn/ }).click();
+    await expect(
+      page.getByText('Codex confirmed that the target turn was interrupted.', {
+        exact: false,
+      }),
+    ).toBeVisible({ timeout: 30_000 });
+    if (
+      execution.filter((method) => method === 'thread/start').length !== 1 ||
+      execution.filter((method) => method === 'thread/resume').length !== 1 ||
+      execution.filter((method) => method === 'turn/start').length !== 3 ||
+      execution.filter((method) => method === 'turn/interrupt').length !== 1
+    )
+      throw new Error('Unexpected control execution count.');
+    report.checks.push(
+      'Service restart retained workflow/session context without replay; explicit resume and input produced a confirmed real response.',
+      'Explicit interruption produced a Codex-confirmed interrupted turn.',
+    );
+    report.structuredApprovals =
+      'Verified with protocol fixtures and controlled integration tests; no live approval was requested.';
+  }
   report.executionMethods = execution;
   report.success = true;
 } finally {

@@ -44,6 +44,39 @@ Sanitized evidence is in [the read-only report](../../tests/fixtures/codex/probe
 
 The first sandboxed attempt could not initialize because Codex storage was read-only. Running the same probe with normal storage access succeeded, without changing Codex configuration or permissions.
 
+## Application control check
+
+The probe above tests Codex's wire behavior directly. The browser-to-service
+check exercises Thrallwright's command journal, session projection, and local
+UI with a real Codex process:
+
+```sh
+just smoke --controls --workspace /path/to/project
+```
+
+This is an explicit model-using check outside ordinary CI. It starts one
+thread and three turns: an initial answer, input after an explicit Resume,
+and a turn that is interrupted. Between the initial answer and Resume, the
+check closes the service-owned app-server process and starts a new service
+with the same temporary application profile. It checks that the saved
+workflow reference and session context return, that restart sends no
+execution command, and that only the user's Resume loads the saved Codex
+conversation. A successful run also requires a confirmed input answer and a
+Codex-reported interrupted outcome. The script writes only a sanitized
+report; it does not retain prompts, transcripts, account data, or raw wire
+traffic.
+
+This check does not establish survival of the original app-server process:
+Thrallwright deliberately closes the process it owns. It does not attach to
+an arbitrary existing CLI process. Structured approvals have controlled
+fixture and service tests, but no live approval was triggered by this
+no-tool model check, so real approval delivery remains outside its evidence.
+
+The check passed with Codex CLI 0.156.1 on 2026-09-25. Its
+[sanitized control report](../../tests/fixtures/codex/workbench-controls.json)
+records the observed browser assertions and execution method counts without
+session IDs or message content.
+
 ## Wire contract
 
 Stdio carries one JSON object per line. Messages omit `jsonrpc`. Client requests contain `id`, `method`, and `params`; responses echo `id` with `result` or `error`. Notifications omit `id`. Server-initiated requests have both `method` and `id` and must be distinguished from responses before correlating request IDs.

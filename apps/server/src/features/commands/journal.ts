@@ -3,14 +3,14 @@ import type { Kysely } from 'kysely';
 import {
   commandRecordSchema,
   type CommandRecord,
-  type StartCommand,
+  type ExecutionCommand,
 } from '@thrallwright/contracts';
 import type { AppDatabase } from '../../storage/database.js';
 
 export interface CommandJournal {
   load(): Promise<CommandRecord[]>;
   begin(
-    command: StartCommand,
+    command: ExecutionCommand,
   ): Promise<{ record: CommandRecord; created: boolean }>;
   update(record: CommandRecord): Promise<void>;
 }
@@ -53,13 +53,15 @@ export function commandJournal(
       const record: CommandRecord = {
         id: command.id,
         operation: command.operation,
-        targetId: null,
+        targetId: command.operation === 'start' ? null : command.targetId,
         phase: 'intent',
         detail: 'Intent saved; not dispatched.',
         createdAt: now,
         updatedAt: now,
         resultSessionId: null,
-        turnId: null,
+        turnId: command.operation === 'interrupt' ? command.turnId : null,
+        approvalId:
+          command.operation === 'approval' ? command.approvalId : null,
       };
       const inserted = await db
         .insertInto('commands')

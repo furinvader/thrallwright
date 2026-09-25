@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-09-25T00:04:18.181Z",
+  "workspaceKind": "Thrallwright checkout",
+  "realCodex": true,
+  "checks": [
+    "Explicit browser start produced real assistant activity and a confirmed turn outcome.",
+    "External scalar/null workflow updates and browser reload preserved observation without execution.",
+    "Service restart retained workflow/session context without replay; explicit resume and input produced a confirmed real response.",
+    "Explicit interruption produced a Codex-confirmed interrupted turn."
+  ],
+  "structuredApprovals": "Verified with protocol fixtures and controlled integration tests; no live approval was requested.",
+  "executionMethods": [
+    "thread/start",
+    "turn/start",
+    "thread/resume",
+    "turn/start",
+    "turn/start",
+    "turn/interrupt"
+  ],
+  "success": true
+}

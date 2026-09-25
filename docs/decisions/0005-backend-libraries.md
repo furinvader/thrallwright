@@ -1,6 +1,6 @@
 # ADR 0005: Backend server, validation, and SQLite libraries
 
-Status: Accepted, 2026-09-25. Implementation is pending.
+Status: Accepted, 2026-09-25. Implemented for the first slice; see the [workbench guide](../workbench.md) and [integration evidence](../integration/codex.md).
 
 ## Context
 

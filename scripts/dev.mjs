@@ -88,6 +88,7 @@ try {
       root,
       '--profile-dir',
       profile,
+      ...process.argv.slice(2),
     ],
     {
       THRALLWRIGHT_DEV_ORIGIN: 'http://127.0.0.1:4200',

@@ -105,6 +105,126 @@ async function fixture(
   };
 }
 
+describe('exact terminal turn evidence', () => {
+  it('does not use cached latest outcomes or session summaries as terminal evidence', async () => {
+    const original = await fixture();
+    original.service.acceptTurn('thread-1', turn('saved-turn', []));
+    const cached = original.session();
+    expect(cached.latestTurnOutcome).toBe('completed');
+    const restored = await fixture([cached]);
+    expect(
+      restored.service.getTurnOutcome('thread-1', 'saved-turn'),
+    ).toBeUndefined();
+    expect(
+      restored.service.getTurnOutcome('unknown-thread', 'saved-turn'),
+    ).toBeUndefined();
+  });
+
+  it('records exact terminal IDs from a fresh history read without making that session controllable', async () => {
+    const { service, codex, session } = await fixture();
+    codex.histories.set('thread-1', {
+      thread: {
+        ...thread(),
+        turns: [
+          turn('finished', [], 'completed'),
+          turn('stopped', [], 'interrupted'),
+          turn('broken', [], 'failed'),
+          turn('active', [], 'inProgress'),
+        ],
+      },
+    });
+    await service.readHistory('thread-1');
+    expect(service.getTurnOutcome('thread-1', 'finished')).toBe('completed');
+    expect(service.getTurnOutcome('thread-1', 'stopped')).toBe('interrupted');
+    expect(service.getTurnOutcome('thread-1', 'broken')).toBe('failed');
+    expect(service.getTurnOutcome('thread-1', 'active')).toBeUndefined();
+    expect(service.getTurnOutcome('thread-1', 'unseen')).toBeUndefined();
+    expect(session().controllable).toBe(false);
+  });
+
+  it('preserves newer live outcomes when a history read finishes late', async () => {
+    const { service, codex } = await fixture();
+    const pending = deferred();
+    codex.historyResult = pending.promise;
+    const reading = service.readHistory('thread-1');
+    service.acceptTurn('thread-1', turn('one', [], 'interrupted'));
+    pending.resolve({
+      thread: { ...thread(), turns: [turn('one', [], 'completed')] },
+    });
+    await reading;
+    expect(service.getTurnOutcome('thread-1', 'one')).toBe('interrupted');
+    service.acceptTurn('thread-1', turn('one', [], 'inProgress'));
+    expect(service.getTurnOutcome('thread-1', 'one')).toBe('interrupted');
+  });
+
+  it('retains newer live outcome evidence when a delayed history exceeds the cache limit', async () => {
+    const { service, codex } = await fixture();
+    const pending = deferred();
+    codex.historyResult = pending.promise;
+    const reading = service.readHistory('thread-1');
+    service.acceptTurn('thread-1', turn('new-live-turn', [], 'interrupted'));
+    pending.resolve({
+      thread: {
+        ...thread(),
+        turns: Array.from({ length: 120 }, (_, index) =>
+          turn(`old-${index}`, []),
+        ),
+      },
+    });
+    await reading;
+    expect(service.getTurnOutcome('thread-1', 'new-live-turn')).toBe(
+      'interrupted',
+    );
+    expect(service.getTurnOutcome('thread-1', 'old-0')).toBeUndefined();
+    expect(service.getTurnOutcome('thread-1', 'old-119')).toBe('completed');
+  });
+
+  it('clears evidence on disconnect and rejects reads from the previous connection', async () => {
+    const { service, codex } = await fixture();
+    service.acceptTurn('thread-1', turn('one', [], 'completed'));
+    const pending = deferred();
+    codex.historyResult = pending.promise;
+    const reading = service.readHistory('thread-1');
+    codex.state$.next({ state: 'unavailable', detail: 'Disconnected' });
+    expect(service.getTurnOutcome('thread-1', 'one')).toBeUndefined();
+    codex.state$.next({ state: 'available', detail: 'Reconnected' });
+    await service.refresh();
+    pending.resolve({
+      thread: { ...thread(), turns: [turn('one', [], 'completed')] },
+    });
+    await reading;
+    expect(service.getTurnOutcome('thread-1', 'one')).toBeUndefined();
+    codex.historyResult = undefined;
+    codex.histories.set('thread-1', {
+      thread: { ...thread(), turns: [turn('one', [], 'completed')] },
+    });
+    await service.readHistory('thread-1');
+    expect(service.getTurnOutcome('thread-1', 'one')).toBe('completed');
+  });
+
+  it('removes deleted session evidence and bounds retained terminal IDs', async () => {
+    const { service, codex } = await fixture();
+    for (let index = 0; index < 101; index++)
+      service.acceptTurn('thread-1', turn(`turn-${index}`, [], 'completed'));
+    expect(service.getTurnOutcome('thread-1', 'turn-0')).toBeUndefined();
+    expect(service.getTurnOutcome('thread-1', 'turn-100')).toBe('completed');
+    codex.event('thread/deleted', { threadId: 'thread-1' });
+    expect(service.getTurnOutcome('thread-1', 'turn-100')).toBeUndefined();
+  });
+
+  it('does not treat failed or mismatched history reads as turn evidence', async () => {
+    const { service, codex } = await fixture();
+    codex.histories.set('thread-1', {
+      thread: { ...thread('other-thread'), turns: [turn('one', [])] },
+    });
+    await service.readHistory('thread-1');
+    expect(service.getTurnOutcome('thread-1', 'one')).toBeUndefined();
+    service.close();
+    service.acceptTurn('thread-1', turn('one', []));
+    expect(service.getTurnOutcome('thread-1', 'one')).toBeUndefined();
+  });
+});
+
 describe('session observation and ownership', () => {
   it('discovers and reads external history without pretending to attach or executing commands', async () => {
     const { service, codex, session } = await fixture();

@@ -46,6 +46,38 @@ sessions are excluded from this durable cache. When Codex explicitly reports
 that a thread's history was deleted, Thrallwright purges that thread's cached
 activity.
 
+## Authentication and controls
+
+The workbench checks Codex authentication through the connected harness and
+shows whether it is ready, requires sign-in, or cannot be checked. Codex keeps
+the account and credentials; Thrallwright does not store them or sign in on your
+behalf. A configured provider that does not require OpenAI authentication can
+be ready without an OpenAI account. If sign-in is required, run `codex login`
+in the same environment that runs the workbench, then refresh. In a Nix
+checkout, `nix develop -c codex login` uses the pinned CLI.
+
+Starting a session creates a Codex thread and sends the initial input.
+Opening a historical session only inspects it; **Resume** is a separate,
+explicit action that asks Codex to load the saved conversation. **Send** is
+available for a currently owned, idle session. **Interrupt** targets the
+currently observed turn; its request acknowledgment does not prove that the
+turn stopped. The workbench waits for Codex's turn outcome to confirm that.
+These controls are available only when the current connection and session
+state support them.
+
+For a live structured command or file-change approval, the workbench can
+**Accept** or **Decline** that one request. It does not turn a single approval
+into a session-wide permission grant. Other request kinds remain visible but
+are not answered as if they were command approvals. Saved or disconnected
+approval items are never actionable.
+
+Execution-changing requests have local command records. A timed-out or lost
+response may have reached Codex, so an **uncertain** record is not resent
+automatically, including after a browser reconnect or service restart. Inspect
+the Codex session before choosing another action. Thrallwright owns the Codex
+app-server process it launches; closing the service ends that connection and
+does not promise that its live process survives for later reconnection.
+
 ## Workflow state
 
 The Workflows view displays arbitrary valid JSON, including objects, arrays,

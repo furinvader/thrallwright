@@ -1,6 +1,6 @@
 # ADR 0003: WebSockets and shared browser-service contracts
 
-Status: Accepted, 2026-09-24. Implementation is pending.
+Status: Accepted, 2026-09-24. Implemented for the first slice; see the [workbench guide](../workbench.md) and [integration evidence](../integration/codex.md).
 
 ## Context
 

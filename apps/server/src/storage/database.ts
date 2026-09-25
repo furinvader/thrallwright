@@ -33,6 +33,12 @@ export interface AppDatabase {
   sessions: SessionRow;
   activity_cache: ActivityCacheRow;
   commands: CommandRow;
+  approval_cache: {
+    workspace: string;
+    id: string;
+    payload: string;
+    updated_at: string;
+  };
 }
 export async function openDatabase(
   filename: string,
@@ -102,6 +108,21 @@ export async function openDatabase(
               .addColumn('record', 'text', (col) => col.notNull())
               .addColumn('updated_at', 'text', (col) => col.notNull())
               .addPrimaryKeyConstraint('commands_key', ['workspace', 'id'])
+              .execute();
+          },
+        },
+        '003_approval_cache': {
+          up: async (migrationDb: Kysely<unknown>) => {
+            await migrationDb.schema
+              .createTable('approval_cache')
+              .addColumn('workspace', 'text', (col) => col.notNull())
+              .addColumn('id', 'text', (col) => col.notNull())
+              .addColumn('payload', 'text', (col) => col.notNull())
+              .addColumn('updated_at', 'text', (col) => col.notNull())
+              .addPrimaryKeyConstraint('approval_cache_key', [
+                'workspace',
+                'id',
+              ])
               .execute();
           },
         },

@@ -1,14 +1,21 @@
 import { Injectable, OnDestroy, signal } from '@angular/core';
 import {
   clientMessageSchema,
+  executionCommandSchema,
   serverMessageSchema,
-  startCommandSchema,
+  type Approval,
+  type ExecutionCommand,
+  type Session,
   type SnapshotMessage,
 } from '@thrallwright/contracts';
 
 export type BackendState = 'connecting' | 'connected' | 'unavailable';
-export type LocalStart = {
+export type LocalCommand = {
   id: string;
+  operation: ExecutionCommand['operation'];
+  targetId?: string;
+  approvalId?: string;
+  turnId?: string;
   phase: 'sending' | 'uncertain' | 'rejected';
   detail?: string;
 };
@@ -18,7 +25,7 @@ export class WorkbenchConnection implements OnDestroy {
   readonly state = signal<BackendState>('connecting');
   readonly snapshot = signal<SnapshotMessage | null>(null);
   readonly problem = signal<string | null>(null);
-  readonly localStarts = signal<LocalStart[]>([]);
+  readonly localCommands = signal<LocalCommand[]>([]);
 
   private socket: WebSocket | null = null;
   private reconnectTimer: number | null = null;
@@ -60,30 +67,171 @@ export class WorkbenchConnection implements OnDestroy {
   }
 
   start(prompt: string): string | null {
-    if (!this.socket || this.state() !== 'connected') return null;
-    if (!this.snapshot()?.capabilities.startSession) return null;
-    if (this.localStarts().some((start) => start.phase === 'sending'))
+    if (
+      this.snapshot()?.integration.state !== 'available' ||
+      !this.snapshot()?.capabilities.startSession ||
+      !this.authReady()
+    )
       return null;
-    const command = startCommandSchema.safeParse({
+    return this.submit({
       type: 'command',
       id: crypto.randomUUID(),
       operation: 'start',
       prompt,
     });
+  }
+
+  resume(sessionId: string): string | null {
+    if (!this.authReady() || !this.sessionCan(sessionId, 'resume')) return null;
+    return this.submit({
+      type: 'command',
+      id: crypto.randomUUID(),
+      operation: 'resume',
+      targetId: sessionId,
+    });
+  }
+
+  input(sessionId: string, prompt: string): string | null {
+    if (!this.authReady() || !this.sessionCan(sessionId, 'input')) return null;
+    return this.submit({
+      type: 'command',
+      id: crypto.randomUUID(),
+      operation: 'input',
+      targetId: sessionId,
+      prompt,
+    });
+  }
+
+  interrupt(sessionId: string, turnId: string): string | null {
+    if (!this.sessionCan(sessionId, 'interrupt')) return null;
+    if (
+      this.snapshot()?.sessions.find((session) => session.id === sessionId)
+        ?.activeTurnId !== turnId
+    )
+      return null;
+    return this.submit({
+      type: 'command',
+      id: crypto.randomUUID(),
+      operation: 'interrupt',
+      targetId: sessionId,
+      turnId,
+    });
+  }
+
+  answerApproval(
+    approval: Approval,
+    decision: 'accept' | 'decline',
+  ): string | null {
+    if (
+      this.snapshot()?.integration.state !== 'available' ||
+      !approval.actionable ||
+      approval.status !== 'pending' ||
+      !['command', 'fileChange'].includes(approval.kind) ||
+      !approval.sessionId ||
+      this.hasUnresolved('approval', approval.sessionId, approval.id) ||
+      !this.snapshot()?.approvals.some(
+        (current) =>
+          current.id === approval.id &&
+          current.actionable &&
+          current.status === 'pending' &&
+          current.kind === approval.kind &&
+          current.sessionId === approval.sessionId,
+      )
+    )
+      return null;
+    return this.submit({
+      type: 'command',
+      id: crypto.randomUUID(),
+      operation: 'approval',
+      targetId: approval.sessionId,
+      approvalId: approval.id,
+      decision,
+    });
+  }
+
+  private authReady(): boolean {
+    return this.snapshot()?.auth.state === 'ready';
+  }
+
+  hasUnresolved(
+    operation: ExecutionCommand['operation'],
+    targetId: string,
+    approvalId?: string,
+    includeUncertain = true,
+  ): boolean {
+    const matches = (item: {
+      operation: ExecutionCommand['operation'];
+      targetId?: string | null;
+      approvalId?: string | null;
+    }) =>
+      item.operation === operation &&
+      item.targetId === targetId &&
+      (approvalId === undefined || item.approvalId === approvalId);
+    return (
+      this.localCommands().some(
+        (item) =>
+          matches(item) &&
+          (item.phase === 'sending' ||
+            (includeUncertain && item.phase === 'uncertain')),
+      ) ||
+      (this.snapshot()?.commands.some(
+        (item) =>
+          matches(item) &&
+          (['intent', 'dispatching', 'accepted'].includes(item.phase) ||
+            (includeUncertain && item.phase === 'uncertain')),
+      ) ??
+        false)
+    );
+  }
+
+  hasInFlight(
+    operation: ExecutionCommand['operation'],
+    targetId: string,
+  ): boolean {
+    return this.hasUnresolved(operation, targetId, undefined, false);
+  }
+
+  private sessionCan(
+    sessionId: string,
+    capability: keyof NonNullable<Session['capabilities']>,
+  ): boolean {
+    return (
+      this.snapshot()?.integration.state === 'available' &&
+      this.snapshot()?.sessions.find((session) => session.id === sessionId)
+        ?.capabilities?.[capability] === true
+    );
+  }
+
+  private submit(raw: ExecutionCommand): string | null {
+    if (!this.socket || this.state() !== 'connected') return null;
+    if (this.localCommands().some((item) => item.phase === 'sending'))
+      return null;
+    const command = executionCommandSchema.safeParse(raw);
     if (!command.success) return null;
-    this.localStarts.update((starts) => [
-      ...starts,
-      { id: command.data.id, phase: 'sending' },
+    this.localCommands.update((commands) => [
+      ...commands,
+      {
+        id: command.data.id,
+        operation: command.data.operation,
+        ...(command.data.operation !== 'start'
+          ? { targetId: command.data.targetId }
+          : {}),
+        ...(command.data.operation === 'approval'
+          ? { approvalId: command.data.approvalId }
+          : {}),
+        ...(command.data.operation === 'interrupt'
+          ? { turnId: command.data.turnId }
+          : {}),
+        phase: 'sending',
+      },
     ]);
     try {
       this.socket.send(JSON.stringify(command.data));
       return command.data.id;
     } catch {
-      this.localStarts.update((starts) =>
-        starts.map((start) =>
-          start.id === command.data.id
-            ? { ...start, phase: 'uncertain' }
-            : start,
+      this.localCommands.update((commands) =>
+        commands.map((item) =>
+          item.id === command.data.id ? { ...item, phase: 'uncertain' } : item,
         ),
       );
       return command.data.id;
@@ -128,10 +276,10 @@ export class WorkbenchConnection implements OnDestroy {
         this.snapshot.set(current);
         this.state.set('connected');
         this.problem.set(null);
-        this.localStarts.update((starts) =>
-          starts.filter(
-            (start) =>
-              !current.commands.some((command) => command.id === start.id),
+        this.localCommands.update((commands) =>
+          commands.filter(
+            (item) =>
+              !current.commands.some((command) => command.id === item.id),
           ),
         );
         this.inspect(this.selectedSessionId);
@@ -139,15 +287,15 @@ export class WorkbenchConnection implements OnDestroy {
         this.problem.set(parsed.data.message);
         if (parsed.data.commandId) {
           const { commandId, disposition, message } = parsed.data;
-          this.localStarts.update((starts) =>
-            starts.map((start) =>
-              start.id === commandId
+          this.localCommands.update((commands) =>
+            commands.map((item) =>
+              item.id === commandId
                 ? {
-                    ...start,
+                    ...item,
                     phase: disposition ?? 'uncertain',
                     detail: message,
                   }
-                : start,
+                : item,
             ),
           );
         }
@@ -159,9 +307,9 @@ export class WorkbenchConnection implements OnDestroy {
       this.inspectedOnSocket = null;
       if (this.destroyed) return;
       this.state.set('unavailable');
-      this.localStarts.update((starts) =>
-        starts.map((start) =>
-          start.phase === 'sending' ? { ...start, phase: 'uncertain' } : start,
+      this.localCommands.update((commands) =>
+        commands.map((item) =>
+          item.phase === 'sending' ? { ...item, phase: 'uncertain' } : item,
         ),
       );
       this.problem.set(
