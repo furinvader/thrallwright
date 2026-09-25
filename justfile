@@ -7,7 +7,7 @@ default:
     @just --list
 
 # Install locked JavaScript dependencies and build shared contracts.
-setup:
+setup: check-deps
     pnpm install --frozen-lockfile
     bash scripts/prepare-native.sh
     pnpm --filter @thrallwright/contracts build
@@ -16,9 +16,13 @@ setup:
 dev *args:
     pnpm dev "$@"
 
-# Check formatting, lint, types/templates, and fast tests.
+# Check exact dependency versions, formatting, lint, types/templates, and fast tests.
 check:
     pnpm check
+
+# Check dependency declarations before installing any packages.
+check-deps:
+    node scripts/check-dependencies.mjs
 
 # Run fast tests, optionally in one package with runner arguments.
 test *args:

@@ -56,6 +56,7 @@
             THRALLWRIGHT_GLIBC_LIB = "${pkgs.glibc}/lib";
             buildPhase = ''
               runHook preBuild
+              node scripts/check-dependencies.mjs
               pnpm --filter @thrallwright/server rebuild better-sqlite3
               bash scripts/prepare-native.sh
               pnpm build

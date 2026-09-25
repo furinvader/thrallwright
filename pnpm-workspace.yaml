@@ -1,6 +1,13 @@
+# Keep the manifest discovery in scripts/check-dependencies.mjs in sync.
 packages:
   - apps/*
   - packages/*
+# Save registry and local workspace additions at exact versions.
+saveExact: true
+savePrefix: ''
+saveWorkspaceProtocol: true
+# Updating the dependency graph must be an explicit operation.
+frozenLockfile: true
 onlyBuiltDependencies:
   - better-sqlite3
   - esbuild

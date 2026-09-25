@@ -34,6 +34,8 @@ Enforce the intended import boundaries with lint rules and maintain a short repo
 
 Use one pnpm workspace lockfile and explicit `workspace:` dependencies for local packages. Pin pnpm in the Nix-managed toolchain. The workspace protocol requires a local package rather than silently resolving that dependency from the registry. [pnpm workspaces](https://pnpm.io/workspaces)
 
+Pin every direct dependency declaration to an exact version, including development, optional, and peer dependencies. Local references use `workspace:<exact version>`. Save exact versions by default, enforce declarations before setup and in CI, and use frozen lockfiles for routine installs. Dependency updates explicitly opt into changing the lockfile and receive review of the complete dependency diff. The lockfile pins the transitive graph and integrity hashes; exact direct versions alone do not freeze transitive dependencies. See the [dependency update procedure](../development.md#dependency-versions).
+
 ## Developer command interface
 
 Use a root `justfile` as the documented entry point for development and CI tasks. Begin with one file and concise recipe descriptions; split into included files only when its size warrants it. Configure bare `just` to list available commands. `just` provides recipe discovery and parameterized commands. [Just manual](https://just.systems/man/en/), [listing recipes](https://just.systems/man/en/listing-available-recipes.html)

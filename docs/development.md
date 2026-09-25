@@ -48,8 +48,9 @@ just build
 just format
 ```
 
-`just check` checks formatting, lint, compilation, and fast tests without
-rewriting files. `just format` is the explicit rewrite command. `just test`
+`just check` checks exact dependency declarations, formatting, lint, compilation,
+and fast tests without rewriting files. `just format` is the explicit rewrite
+command. `just test`
 runs all fast tests, or one package with `just test server`, `just test web`, or
 `just test contracts`. Arguments after the package name go to that package's
 test runner. `just test-e2e` builds the app first and forwards optional
@@ -84,6 +85,43 @@ The workspace contains `packages/contracts` for browser-safe protocol schemas,
 `apps/server` for the Node service and CLI, and `apps/web` for Angular. Both
 applications import contracts through its package exports. Build contracts
 before running either consumer when working outside the just recipes.
+
+## Dependency versions
+
+All first-party `package.json` dependency declarations use exact versions,
+including development, optional, and peer dependencies. Local packages use an
+exact workspace reference such as `workspace:0.1.0`. pnpm saves exact versions
+for new additions by default. `just check-deps` validates every workspace
+manifest without needing installed dependencies; `just setup` runs it before
+installation, and `just check` runs it in CI.
+
+Ordinary `pnpm install` uses a frozen lockfile, including outside CI. Missing or
+outdated lockfiles cause an error rather than silently resolving a new tree.
+Commit `pnpm-lock.yaml` alongside manifest changes: it pins the transitive
+dependencies and their integrity hashes as well as direct dependencies. Do not
+delete it to fix an installation error.
+
+For a deliberate addition or update, select a specific version with `pnpm add`.
+Unlike an ordinary install, this command explicitly changes the manifest and
+lockfile. For example, to select the current RxJS version for the server:
+
+```sh
+pnpm --filter @thrallwright/server add rxjs@7.8.2
+just check-deps
+just check
+just package-smoke
+```
+
+Use `-D` for development dependencies or `-w` for root tooling. If you edit a
+manifest manually, `pnpm install --no-frozen-lockfile` explicitly permits
+regenerating the lockfile. Review the manifest and full lockfile diff, including
+transitive changes. When the dependency graph changes, temporarily set
+`pnpmDeps.hash` in `flake.nix` to `pkgs.lib.fakeHash`, build to obtain the expected
+hash mismatch, replace it with the reported hash, and rerun `just package-smoke`.
+This forces Nix to fetch the changed graph rather than reuse its old dependency
+cache. Keep dependency changes in a reviewable commit. Exact pins prevent
+unintended version drift; selecting and reviewing trustworthy versions remains
+necessary.
 
 ## Run the packaged application
 
