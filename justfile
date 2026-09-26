@@ -24,6 +24,10 @@ check:
 check-deps:
     node scripts/check-dependencies.mjs
 
+# Check commit subjects and an optional PR title (or the current CI event).
+check-commits *args:
+    node scripts/check-commit-titles.mjs "$@"
+
 # Run fast tests, optionally in one package with runner arguments.
 test *args:
     pnpm test "$@"

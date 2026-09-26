@@ -88,6 +88,62 @@ The workspace contains `packages/contracts` for browser-safe protocol schemas,
 applications import contracts through its package exports. Build contracts
 before running either consumer when working outside the just recipes.
 
+## Commits and pull requests
+
+Use the same type-prefixed format for every new commit subject and PR title:
+
+```text
+type: summary
+type(scope): summary
+type(scope)!: summary
+```
+
+The project follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+header format with lowercase types. Use `feat` for features, `fix` for bug fixes,
+`docs` for documentation, `test` for tests, `ci` for automation, `build` for build
+or dependency changes, `refactor` for restructuring, `perf` for performance,
+`style` for formatting, `chore` for other maintenance, and `revert` for reversions.
+A scope such as `server`, `web`, or `deps` is optional. Add `!` for a breaking
+change and explain it in the commit body or PR description. The summary must be
+nonempty and stay on one line.
+
+Examples:
+
+```text
+feat(server): support another workflow source
+fix: preserve session selection after reconnect
+docs: update installation instructions
+ci: check commit and PR naming
+```
+
+All commits inside a PR follow this convention, including follow-up fixes and
+merge commits. Reword or squash temporary `fixup!` commits before asking for
+review. Keep the PR title about the final combined change; individual commits
+can use different types when their work differs.
+
+Keep GitHub's squash commit title set to **Pull request title**. This gives the
+new commit on `main` the reviewed PR title; preserve its prefix if editing the
+merge message. Existing published history is not rewritten to adopt the rule.
+
+Check a branch and its proposed PR title locally, after fetching the base:
+
+```sh
+git fetch origin main
+just check-commits --from origin/main --to HEAD --title 'ci: check commit and PR naming'
+```
+
+The dedicated **Commit conventions** workflow checks the PR title and every
+commit in its base-to-head range. It reruns on title edits as well as new commits.
+It ignores GitHub's synthetic test-merge commit and audits only newly introduced
+commits on pushes to `main`. The script reads event JSON directly, so titles are
+treated as data. No additional Node packages are needed.
+
+To enforce the check before merging, configure a GitHub ruleset or branch
+protection for `main` that requires pull requests and the `commit-conventions`
+status check. The push check is an audit after a commit reaches `main`; it cannot
+block a direct push retroactively. Repository settings are separate from the
+workflow file. See [GitHub's required status checks](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-status-checks-to-pass-before-merging).
+
 ## Code map
 
 - **Entry and transport:** [CLI](../apps/server/src/cli.ts) parses launch options;

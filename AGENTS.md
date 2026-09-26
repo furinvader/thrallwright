@@ -88,6 +88,10 @@ Do not turn an incidental first implementation choice into a product requirement
 
 Keep all dependency declarations at exact versions, including development, optional, and peer dependencies. Use `workspace:<exact version>` for local packages. Do not introduce semver ranges, tags, or unpinned sources. Preserve the committed pnpm lockfile; routine installs must use the frozen lockfile. `just setup` runs `just check-deps` before installation; run it directly when editing manifests, and follow the deliberate update procedure in [docs/development.md](docs/development.md#dependency-versions).
 
+## Commits and pull requests
+
+Every new commit subject and PR title must use `type: summary`, with an optional scope and breaking-change marker: `type(scope)!: summary`. Use a lowercase type from `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, or `revert`. This applies to every commit inside a PR, not only its final squash commit. Keep the PR title aligned with the final change; the repository uses that title for squash commits on `main`. See [the contributor workflow](docs/development.md#commits-and-pull-requests) and run `just check-commits` as documented there.
+
 ## Changes to the specification
 
 When behavior changes intentionally, update the relevant Markdown specification in the same pull request.
