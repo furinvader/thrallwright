@@ -233,7 +233,12 @@
             Session discovery is unavailable.
           </p>
           } @if (current.sessions.length) {
-          <div class="session-list">
+          <div
+            class="session-list"
+            role="region"
+            aria-label="Session list"
+            tabindex="0"
+          >
             @for (session of current.sessions; track session.id) {
             <button
               class="session-row"
@@ -242,7 +247,7 @@
               [attr.aria-pressed]="selectedSessionId() === session.id"
               (click)="selectSession(session.id)"
             >
-              <span class="session-title"
+              <span class="session-title" [title]="session.title || session.id"
                 >{{ session.title || session.id }}</span
               >
               <span class="session-status"

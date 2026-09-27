@@ -74,6 +74,12 @@ Each session entry should show, when known:
 
 The session list must distinguish current state from historical existence. A session with saved history but no observable live process must not appear active.
 
+The session list should remain compact as sessions accumulate, scrolling within
+a bounded panel. Long titles may be shortened visually in the list, with the
+full title available in the selected session's detail view. Status, freshness,
+and available relationship context must remain visible in each entry. The list
+must support keyboard navigation and scrolling.
+
 ### Status semantics
 
 At minimum, Thrallwright must be able to represent:
