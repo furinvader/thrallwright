@@ -38,6 +38,12 @@ of the title alongside status, freshness, and any parent or ephemeral context.
 Select an entry to read its full title in Activity. The list can be focused and
 scrolled with the keyboard; Tab moves between session entries.
 
+The activity list scrolls independently within a bounded **Activity history**
+region on desktop and mobile. The Activity heading, session details, and controls
+stay above it. Tab to the region to scroll it with the keyboard; reaching its
+boundary does not scroll the page. Items remain in chronological order, and new
+activity does not automatically move the scroll position while you read.
+
 Activity labels identify whether an item came from live observation, Codex
 history, or Thrallwright's cache. Cached activity remains useful after a
 restart, but it is historical and may be incomplete. A saved approval or status
