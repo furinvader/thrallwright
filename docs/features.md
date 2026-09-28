@@ -102,8 +102,14 @@ Opening a session should answer "what is happening here?"
 - The view must distinguish agent output from user input when the source provides that distinction.
 - Structured tool activity should be shown as structured activity when the integration provides it.
 - Tool results, status changes, errors, approval requests, and artifact references should remain distinguishable rather than being flattened into one undifferentiated transcript where possible.
-- The interface should keep newly arriving activity visible without making older activity inaccessible.
+- Newly arriving activity must remain reachable without moving the user away from older activity they are reading.
 - Historical activity must be visually or semantically distinguishable from currently streaming activity when that distinction matters.
+
+The activity list should scroll within a bounded region as activity accumulates,
+on desktop and mobile. The Activity heading, session details, and controls must
+remain above that region. The region must have an accessible name, visible
+keyboard focus, and keyboard scrolling. Reaching its scroll boundary must not
+scroll the page. Activity remains in chronological order with manual scrolling.
 
 ### Reasoning boundary
 

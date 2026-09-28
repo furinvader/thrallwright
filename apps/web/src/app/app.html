@@ -350,21 +350,28 @@
           {
           <p class="supporting-text">Available history may be incomplete.</p>
           } @if (session.activities.length) {
-          <ol class="activity-list">
-            @for (item of session.activities; track item.id) {
-            <li class="activity-item">
-              <div class="activity-meta">
-                <span class="activity-kind">{{ item.kind }}</span>
-                <span
-                  >{{ backendState() === 'connected' ? item.origin : 'stale' }}
-                  · {{ item.observedAt }}</span
-                >
-                @if (!item.complete) { <span>Partial or in progress</span> }
-              </div>
-              <pre class="activity-text">{{ item.text }}</pre>
-            </li>
-            }
-          </ol>
+          <div
+            class="activity-history"
+            role="region"
+            aria-label="Activity history"
+            tabindex="0"
+          >
+            <ol class="activity-list">
+              @for (item of session.activities; track item.id) {
+              <li class="activity-item">
+                <div class="activity-meta">
+                  <span class="activity-kind">{{ item.kind }}</span>
+                  <span
+                    >{{ backendState() === 'connected' ? item.origin : 'stale'
+                    }} · {{ item.observedAt }}</span
+                  >
+                  @if (!item.complete) { <span>Partial or in progress</span> }
+                </div>
+                <pre class="activity-text">{{ item.text }}</pre>
+              </li>
+              }
+            </ol>
+          </div>
           } @else if (session.history.state !== 'loading') {
           <p class="empty-state">
             No observable activity is available for this session.
