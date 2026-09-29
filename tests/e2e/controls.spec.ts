@@ -1,87 +1,17 @@
-import { spawn, type ChildProcess } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { expect, test } from './service';
 
-const repository = resolve(import.meta.dirname, '../..');
-const harness = resolve(import.meta.dirname, 'fixtures/fake-codex.mjs');
-const port = 4321;
-const address = `http://127.0.0.1:${port}`;
-let server: ChildProcess;
-let directory: string;
-let logFile: string;
-let serverOutput = '';
-
-function count(method: string): number {
-  try {
-    return readFileSync(logFile, 'utf8')
-      .split('\n')
-      .filter((line) => line === method).length;
-  } catch {
-    return 0;
-  }
-}
-
-test.beforeAll(async () => {
-  directory = mkdtempSync(join(tmpdir(), 'thrallwright-controls-'));
-  logFile = join(directory, 'harness.log');
-  server = spawn(
-    process.execPath,
-    [
-      'apps/server/dist/cli.js',
-      '--workspace',
-      directory,
-      '--profile-dir',
-      join(directory, 'profile'),
-      '--port',
-      String(port),
-      '--codex',
-      harness,
-      '--no-open',
-    ],
-    {
-      cwd: repository,
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        THRALLWRIGHT_FAKE_CODEX_LOG: logFile,
-        THRALLWRIGHT_FAKE_CODEX_SAVED: '1',
-      },
-    },
-  );
-  server.stdout?.on('data', (chunk: Buffer) => {
-    serverOutput += chunk.toString();
-  });
-  server.stderr?.on('data', (chunk: Buffer) => {
-    serverOutput += chunk.toString();
-  });
-  for (let attempt = 0; attempt < 100; attempt++) {
-    if (server.exitCode !== null)
-      throw new Error(`Server exited: ${serverOutput}`);
-    try {
-      if ((await fetch(`${address}/api/health`)).ok) return;
-    } catch {
-      /* Starting. */
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`Timed out waiting for service: ${serverOutput}`);
-});
-
-test.afterAll(async () => {
-  if (server && server.exitCode === null && server.signalCode === null) {
-    const closed = once(server, 'close');
-    server.kill();
-    await closed;
-  }
-  if (directory) rmSync(directory, { recursive: true, force: true });
-});
+test.use({ serviceOptions: { savedConversation: true } });
 
 test('controls require clicks, and known approvals allow only one response', async ({
   page,
+  service,
 }) => {
+  const { address, harnessLog } = service;
+  const count = (method: string) =>
+    readFileSync(harnessLog, 'utf8')
+      .split('\n')
+      .filter((line) => line === method).length;
   await page.goto(address);
   await expect(page.getByText('Authentication: ready.')).toBeVisible();
   await expect(
