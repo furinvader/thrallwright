@@ -20,6 +20,10 @@ dev *args:
 check:
     pnpm check
 
+# Run source checks and browser workflows using the assets built by check.
+ci: check
+    pnpm test:e2e
+
 # Check dependency declarations before installing any packages.
 check-deps:
     node scripts/check-dependencies.mjs

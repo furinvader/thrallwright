@@ -49,6 +49,7 @@ The root `justfile` provides:
 | `just check-deps` | Reject non-exact first-party dependency declarations. |
 | `just check-commits [options]` | Check new commit subjects and a proposed PR title, or validate the current GitHub event. |
 | `just check` | Check dependency declarations, formatting, lint, compilation, and fast tests. |
+| `just ci` | Run `just check` and browser workflows using its freshly built assets. |
 | `just test [server\|web\|contracts] [runner arguments]` | Run all fast tests or focus on one package. |
 | `just test-e2e [Playwright arguments]` | Build and run browser-to-service workflows. |
 | `just build` | Produce release assets. |
@@ -96,4 +97,4 @@ Nx remains a credible option for more extensive project graphs, dependency rules
 
 ## Verification
 
-The CI workflow runs `just setup`, `just check`, `just build`, `just test-e2e`, and `just package-smoke` through the Nix development shell. `just setup` runs the dependency policy check before its frozen install, while `just check` repeats that check with formatting, lint, compilation, and fast tests. Focused tests run through `just test PACKAGE`. The development supervisor waits for both service and browser readiness and stops its child process groups on shutdown. The package smoke check verifies caller-relative workspace resolution and profile persistence outside the checkout.
+The CI workflow runs on pull requests and pushes to `main`, cancels superseded runs for the same PR or branch, grants read-only repository permissions, and does not persist checkout credentials. Its `check` job runs `just setup` followed by `just ci` through the Nix development shell. `just setup` runs the dependency policy check before its frozen install. `just ci` runs `just check` for dependency policy, formatting, lint, compilation, and fast tests, then runs browser workflows against those assets without rebuilding. Standalone `just test-e2e` still builds before running Playwright. The independent `package` job runs `just package-smoke`, and the separate commit-conventions workflow preserves its `commit-conventions` check. Focused tests run through `just test PACKAGE`. The development supervisor waits for both service and browser readiness and stops its child process groups on shutdown. The package smoke check verifies caller-relative workspace resolution and profile persistence outside the checkout.

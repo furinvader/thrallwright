@@ -42,6 +42,7 @@ Run `just` to list recipes. Routine checks and builds are:
 
 ```sh
 just check
+just ci
 just test
 just test-e2e
 just build
@@ -49,8 +50,10 @@ just format
 ```
 
 `just check` checks exact dependency declarations, formatting, lint, compilation,
-and fast tests without rewriting files. `just format` is the explicit rewrite
-command. `just test` runs all fast tests, or one package with `just test server`,
+and fast tests without rewriting files. `just ci` runs `just check` followed by
+browser workflows using the freshly built assets, so the application is built
+once. `just format` is the explicit rewrite command. `just test` runs all fast
+tests, or one package with `just test server`,
 `just test web`, or `just test contracts`. Arguments after the package name go
 to that package's test runner; the small Node tooling-test suite also runs for
 focused tests. `just test-e2e` builds the app first and forwards
@@ -78,10 +81,15 @@ Noninteractive CI commands use the same interface after setup:
 
 ```sh
 nix develop -c just setup
-nix develop -c just check
-nix develop -c just build
-nix develop -c just test-e2e
+nix develop -c just ci
 ```
+
+GitHub CI runs on pull requests and pushes to `main`. New runs cancel older
+runs for the same PR or branch within each workflow. The `check` job runs setup
+and `just ci`; the independent `package` job runs `just package-smoke` in the
+Nix development shell. CI has read-only repository permissions and checkout
+does not persist its Git credentials. Commit naming is verified separately by
+the `commit-conventions` job.
 
 The workspace contains `packages/contracts` for browser-safe protocol schemas,
 `apps/server` for the Node service and CLI, and `apps/web` for Angular. Both
