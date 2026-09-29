@@ -4,6 +4,9 @@ This workflow applies to human and agent contributors. GitHub issues and pull
 requests are the durable record of work; repository documentation defines the
 shared rules. Alex (`furinvader`) is the maintainer and authorizes merges.
 
+The [maintainer guide](docs/maintaining.md) documents repository administration,
+reviewable GitHub settings, verification, and outstanding administrative actions.
+
 Start with the [README](README.md), the product and architecture reading order in
 [AGENTS.md](AGENTS.md#read-first), and the [development guide](docs/development.md)
 for setup and commands. Preserve the first slice's verified behavior and update
