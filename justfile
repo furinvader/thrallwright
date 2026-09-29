@@ -36,6 +36,10 @@ check-commits *args:
 check-docs:
     node scripts/check-docs.mjs
 
+# Verify Thrallwright's live GitHub rules and merge settings using read-only APIs.
+check-repo-settings:
+    node scripts/check-repo-settings.mjs
+
 # Run fast tests, optionally in one package with runner arguments.
 test *args:
     pnpm test "$@"

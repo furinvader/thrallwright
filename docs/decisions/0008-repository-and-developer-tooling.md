@@ -50,6 +50,7 @@ The root `justfile` provides:
 | `just check-commits [options]` | Check new commit subjects and a proposed PR title, or validate the current GitHub event. |
 | `just check-docs` | Check local Markdown files and heading anchors offline with pinned Lychee, plus template formatting. |
 | `just check` | Check dependency declarations, local documentation links, formatting, lint, compilation, and fast tests. |
+| `just check-repo-settings` | Compare live GitHub protection and merge settings with reviewed JSON using authenticated GET requests; outside ordinary CI. |
 | `just ci` | Run `just check` and browser workflows using its freshly built assets. |
 | `just test [server\|web\|contracts] [runner arguments]` | Run all fast tests or focus on one package. |
 | `just test-e2e [Playwright arguments]` | Build and run browser-to-service workflows. |

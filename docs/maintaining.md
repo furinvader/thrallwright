@@ -34,6 +34,17 @@ integration is introduced by the current workflow.
 
 ### Inspect before applying
 
+Run `nix develop -c just check-repo-settings` for a read-only comparison of
+Thrallwright's live settings with the two checked-in JSON files. The pinned
+GitHub CLI must be authenticated with access to inspect repository rules. The
+command always targets `furinvader/thrallwright`, prints a timestamp and ruleset
+identity, checks configured and effective rules and merge settings, and reports
+additional effective rules or classic protection for maintainer inspection.
+It exits nonzero on drift or incomplete verification; authentication or network
+failure never means that protection is absent. It uses only GET requests and
+does not repair settings. This credentialed check is outside ordinary CI; run
+it after settings changes and during maintenance.
+
 Use an authenticated GitHub CLI with repository administration permission. Run
 these commands from the repository root:
 
@@ -81,6 +92,9 @@ took effect; inspect before retrying. After a timeout creating a ruleset, list
 rulesets before attempting another creation.
 
 ### Verify and record
+
+Run `just check-repo-settings` and record its output after an authorized change.
+The individual readback commands below remain useful for diagnosis.
 
 Using the actual ruleset ID, read back both the configuration and effective
 rules for the branch:
