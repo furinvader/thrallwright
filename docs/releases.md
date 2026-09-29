@@ -47,9 +47,23 @@ of documenting this procedure.
 
 ## Release checks
 
-Run `just setup`, `just check`, `just test-e2e`, and `just package-smoke` in the
-pinned Nix environment. Record commands, revision, results, and the architectures
-actually tested. Where available, `just ci` combines source and browser checks.
+Run `just setup`, then `just check-release --version X.Y.Z` with the proposed
+version in the pinned Nix environment. Setup is the prerequisite that verifies
+the frozen lockfile; the release checker compares workspace versions and exact
+local references, root coordinator metadata, evaluated Nix application/cache
+versions for the current Linux architecture, and the Codex initialize request
+client version. It reads the adapter with the installed TypeScript parser and
+fails if that metadata can no longer be identified. It does not rewrite files,
+build the package, synchronize versions, tag, or publish. A failure to evaluate
+Nix or inspect metadata is a failed check, not evidence of consistency.
+
+This command is separate from ordinary CI: the initial web `0.0.0` version
+intentionally causes `just check-release --version 0.1.0` to fail until a release
+PR synchronizes it. A passing metadata check alone does not establish release
+readiness or authorization.
+
+Also run `just check`, `just test-e2e`, and `just package-smoke`. Record commands,
+revision, results, and the architectures actually tested. Where available, `just ci` combines source and browser checks.
 Check the final PR's commit/title conventions and required GitHub checks.
 
 For changes affecting the harness boundary, run the read-only `just probe` and

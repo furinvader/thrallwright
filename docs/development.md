@@ -263,6 +263,17 @@ changes in a reviewable commit. Exact pins
 prevent unintended version drift; selecting and reviewing trustworthy versions
 remains necessary.
 
+## Release metadata verification
+
+After `just setup` verifies the frozen lockfile, use
+`just check-release --version X.Y.Z` to compare release metadata without changing
+it. The command evaluates the Nix package for the current supported Linux
+architecture and checks first-party package versions, local references, the
+private unversioned coordinator, and Codex client metadata. It is outside
+ordinary CI because development metadata may be unsynchronized. See the
+[release procedure](releases.md#release-checks) for its limits and the additional
+release evidence and authorizations required.
+
 ## Run the packaged application
 
 ```sh
