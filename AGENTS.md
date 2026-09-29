@@ -90,7 +90,11 @@ Keep all dependency declarations at exact versions, including development, optio
 
 ## Commits and pull requests
 
-Every new commit subject and PR title must use `type: summary`, with an optional scope and breaking-change marker: `type(scope)!: summary`. Use a lowercase type from `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, or `revert`. This applies to every commit inside a PR, not only its final squash commit. Keep the PR title aligned with the final change; the repository uses that title for squash commits on `main`. See [the contributor workflow](docs/development.md#commits-and-pull-requests) and run `just check-commits` as documented there.
+Follow the shared [contribution workflow](CONTRIBUTING.md) for task briefs,
+ownership, isolated worktrees, agent authority, handoffs, PR readiness, and
+explicit merge authorization. Humans and agents use the same policy. The
+[commit and PR naming rules](docs/development.md#commits-and-pull-requests) apply
+to every commit and PR title; run `just check-commits` as documented there.
 
 ## Changes to the specification
 

@@ -46,6 +46,9 @@ Thrallwright currently serves one local user and one workspace per service. It c
 
 ## Develop
 
+Follow the [contribution workflow](CONTRIBUTING.md) for task ownership, agent
+authority, validation, review, and merge authorization.
+
 ```sh
 git clone https://github.com/furinvader/thrallwright.git
 cd thrallwright
@@ -79,6 +82,7 @@ Use type-prefixed commit subjects and PR titles, such as `feat: add a workflow s
 - [First implementation slice](docs/first-slice.md) — acceptance criteria and verification of the implemented initial milestone.
 - [Architecture decisions](docs/decisions/README.md) — accepted stack, boundaries, packaging, and developer tooling.
 - [Development guide](docs/development.md) — pinned Linux setup, `just` commands, and packaged launch.
+- [Contributing](CONTRIBUTING.md) — shared workflow for human and agent contributors.
 - [Using the workbench](docs/workbench.md) — sessions, activity, workflow sources, and recovery limits.
 - [Codex integration](docs/integration/codex.md) — verified capabilities, limitations, and the reproducible probe.
 - [AGENTS.md](AGENTS.md) — guidance for implementation agents working in this repository.
