@@ -17,7 +17,7 @@ dev *args:
     pnpm dev "$@"
 
 # Check exact dependency versions, formatting, lint, types/templates, and fast tests.
-check:
+check: check-renovate
     pnpm check
 
 # Run source checks and browser workflows using the assets built by check.
@@ -27,6 +27,11 @@ ci: check
 # Check dependency declarations before installing any packages.
 check-deps:
     node scripts/check-dependencies.mjs
+
+# Validate Renovate configuration and exercise its resolved update policy offline.
+check-renovate:
+    renovate-config-validator --strict --no-global renovate.json
+    node scripts/renovate-policy.mjs
 
 # Check commit subjects and an optional PR title (or the current CI event).
 check-commits *args:

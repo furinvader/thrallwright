@@ -126,6 +126,7 @@
               node
               pnpm_10
               just
+              renovate
               codex
               python3
               pkg-config
@@ -144,6 +145,8 @@
             THRALLWRIGHT_GLIBC_LIB = "${pkgs.glibc}/lib";
             THRALLWRIGHT_CODEX_EXECUTABLE = "${pkgs.codex}/bin/codex";
             THRALLWRIGHT_CHROMIUM_EXECUTABLE = "${pkgs.chromium}/bin/chromium";
+            # Tests use the same pinned Renovate implementation as its validator.
+            THRALLWRIGHT_RENOVATE_ROOT = "${pkgs.renovate}/lib/node_modules/renovate";
             shellHook = ''
               export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
             '';

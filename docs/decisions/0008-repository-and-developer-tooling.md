@@ -47,9 +47,10 @@ The root `justfile` provides:
 | `just setup` | Check dependency declarations, install the frozen lockfile, prepare native dependencies, and build contracts. |
 | `just dev [CLI options]` | Start contracts, service, and browser watch processes; pass options such as `--workflow PATH` to the service. |
 | `just check-deps` | Reject non-exact first-party dependency declarations. |
+| `just check-renovate` | Validate Renovate configuration and exercise its resolved policy using the Nix-pinned implementation. |
 | `just check-commits [options]` | Check new commit subjects and a proposed PR title, or validate the current GitHub event. |
 | `just check-docs` | Check local Markdown files and heading anchors offline with pinned Lychee, plus template formatting. |
-| `just check` | Check dependency declarations, local documentation links, formatting, lint, compilation, and fast tests. |
+| `just check` | Check Renovate policy, dependency declarations, local documentation links, formatting, lint, compilation, and fast tests. |
 | `just check-repo-settings` | Compare live GitHub protection and merge settings with reviewed JSON using authenticated GET requests; outside ordinary CI. |
 | `just ci` | Run `just check` and browser workflows using its freshly built assets. |
 | `just test [server\|web\|contracts] [runner arguments]` | Run all fast tests or focus on one package. |
