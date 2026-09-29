@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, test } from 'node:test';
-import { checkDependencies } from './check-dependencies.mjs';
+import { checkDependencies, manifestPaths } from './check-dependencies.mjs';
 
 const fixtures = [];
 
@@ -133,5 +133,59 @@ test('reports malformed sections and invalid workspace versions', async () => {
     'packages/contracts/package.json: workspace package version must be exact SemVer',
     'package.json optionalDependencies: expected a dependency object',
     'packages/contracts/package.json dependencies other: expected an exact version string',
+  ]);
+});
+
+for (const section of [
+  'dependencies',
+  'devDependencies',
+  'optionalDependencies',
+  'peerDependencies',
+]) {
+  test(`requires the workspace protocol for local packages in ${section}`, async () => {
+    const root = await fixture({
+      [section]: {
+        '@test/contracts': '1.2.3-beta.2+build.004',
+        '@test/web': '9.9.9',
+        external: '2.0.0',
+      },
+    });
+    assert.deepEqual(await checkDependencies(root), [
+      `package.json ${section} @test/contracts: local package requires workspace:1.2.3-beta.2+build.004`,
+      `package.json ${section} @test/web: local package requires workspace:2.0.0`,
+    ]);
+    await writeManifest(join(root, 'apps', 'web'), {
+      name: '@test/web',
+      version: '2.0.0',
+      [section]: { '@test/contracts': 'workspace:1.2.3-beta.2+build.004' },
+    });
+    await writeManifest(root, {
+      private: true,
+      [section]: {
+        '@test/contracts': 'workspace:1.2.3-beta.2+build.004',
+        '@test/web': 'workspace:2.0.0',
+        external: '2.0.0',
+      },
+    });
+    assert.deepEqual(await checkDependencies(root), []);
+  });
+}
+
+test('shared manifest discovery excludes generated, installed, and hidden files', async () => {
+  const root = await fixture();
+  for (const path of [
+    ['apps', 'web', 'dist'],
+    ['apps', 'web', 'node_modules', 'tool'],
+    ['packages', '.hidden'],
+    ['packages', 'node_modules'],
+    ['node_modules', 'tool'],
+  ]) {
+    await writeManifest(join(root, ...path), { name: 'ignored' });
+  }
+  await mkdir(join(root, 'apps', 'no-manifest'));
+  assert.deepEqual(await manifestPaths(root), [
+    join(root, 'package.json'),
+    join(root, 'apps', 'web', 'package.json'),
+    join(root, 'packages', 'contracts', 'package.json'),
   ]);
 });
