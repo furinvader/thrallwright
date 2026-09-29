@@ -118,9 +118,16 @@ export async function verifyRepositorySettings({
   )
     throw new Error('Owned ruleset has duplicate rule types');
 
-  const effective = await get(`${prefix}/rules/branches/main`);
-  if (!Array.isArray(effective))
-    throw new Error('Effective rules response is not an array');
+  const effectivePages = await get(
+    `${prefix}/rules/branches/main?per_page=100`,
+    { paginate: true },
+  );
+  if (
+    !Array.isArray(effectivePages) ||
+    effectivePages.some((page) => !Array.isArray(page))
+  )
+    throw new Error('Effective rules returned invalid paginated data');
+  const effective = effectivePages.flat();
   const ownedEffective = effective.filter(
     (rule) => rule.ruleset_id === actual.id,
   );

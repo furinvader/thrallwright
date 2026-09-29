@@ -27,11 +27,13 @@ function fixture() {
       { ...structuredClone(ruleset), id: 42, extraDefault: false },
     ],
     [
-      `${prefix}/rules/branches/main`,
-      ruleset.rules.map((rule) => ({
-        ...structuredClone(rule),
-        ruleset_id: 42,
-      })),
+      `${prefix}/rules/branches/main?per_page=100`,
+      [
+        ruleset.rules.map((rule) => ({
+          ...structuredClone(rule),
+          ruleset_id: 42,
+        })),
+      ],
     ],
     [prefix, { ...settings, unrelated: 'preserved' }],
     [
@@ -56,20 +58,38 @@ function fixture() {
 test('finds paginated rulesets, accepts reordered rules/defaults, and reports additional policies', async () => {
   const f = fixture();
   f.responses.get(`${f.prefix}/rulesets/42`).rules.reverse();
-  f.responses.get(`${f.prefix}/rules/branches/main`).reverse();
-  f.responses
-    .get(`${f.prefix}/rules/branches/main`)
-    .push({ type: 'creation', ruleset_id: 7 });
+  const effectivePages = f.responses.get(
+    `${f.prefix}/rules/branches/main?per_page=100`,
+  );
+  effectivePages[0].reverse();
+  effectivePages.push([{ type: 'creation', ruleset_id: 7 }]);
   f.responses.set(`${f.prefix}/branches/main/protection`, {
     required_linear_history: { enabled: true },
   });
   const result = await verifyRepositorySettings(f);
   assert.equal(result.rulesetId, 42);
   assert.equal(f.requests[0].options.paginate, true);
+  assert.equal(
+    f.requests.find(({ path }) => path.includes('/rules/branches/')).options
+      .paginate,
+    true,
+  );
   assert.deepEqual(result.additionalEffectiveRules, [
     { type: 'creation', ruleset_id: 7 },
   ]);
   assert.equal(result.classicProtection.required_linear_history.enabled, true);
+});
+
+test('verifies owned rules across all pages and rejects incomplete page shapes', async () => {
+  const f = fixture();
+  const path = `${f.prefix}/rules/branches/main?per_page=100`;
+  const pages = f.responses.get(path);
+  pages.push([pages[0].pop()]);
+  assert.equal((await verifyRepositorySettings(f)).rulesetId, 42);
+  for (const malformed of [{}, [pages[0], null]]) {
+    f.responses.set(path, malformed);
+    await assert.rejects(verifyRepositorySettings(f), /invalid paginated data/);
+  }
 });
 
 test('distinguishes absent classic protection from an incomplete API check', async () => {
@@ -133,7 +153,9 @@ test('rejects changed enforcement, check origin, bypass actors and merge policy'
 
 test('requires all effective rules to have the owned ruleset provenance', async () => {
   const f = fixture();
-  f.responses.get(`${f.prefix}/rules/branches/main`)[0].ruleset_id = 7;
+  f.responses.get(
+    `${f.prefix}/rules/branches/main?per_page=100`,
+  )[0][0].ruleset_id = 7;
   await assert.rejects(verifyRepositorySettings(f), /effective main rules/);
 });
 
