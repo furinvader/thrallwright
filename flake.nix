@@ -135,6 +135,7 @@
               chromium
               curl
               git
+              lychee
             ];
             npm_config_nodedir = node;
             npm_config_build_from_source = "true";

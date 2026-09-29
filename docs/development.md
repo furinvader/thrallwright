@@ -46,6 +46,7 @@ Run `just` to list recipes. Routine checks and builds are:
 
 ```sh
 just check
+just check-docs
 just ci
 just test
 just test-e2e
@@ -53,7 +54,8 @@ just build
 just format
 ```
 
-`just check` checks exact dependency declarations, formatting, lint, compilation,
+`just check` checks exact dependency declarations, local documentation links,
+formatting, lint, compilation,
 and fast tests without rewriting files. `just ci` runs `just check` followed by
 browser workflows using the freshly built assets, so the application is built
 once. `just format` is the explicit rewrite command. `just test` runs all fast
@@ -75,6 +77,14 @@ before removing temporary state. Separate prebuilt worktrees can run browser
 tests concurrently; avoid concurrent builds in the same worktree. This prevents
 port and state collisions, but is not an execution security boundary. See the
 [future isolation plan](test-isolation.md) for the deferred container approach.
+
+`just check-docs` uses the pinned Lychee tool to check local Markdown link
+targets and heading anchors without network requests. It includes tracked and
+non-ignored new Markdown, including templates, agent instructions, specifications,
+and ADRs regardless of formatting exclusions. Deleted input documents are not
+read, but links targeting them fail. External URLs are not checked. GitHub
+template formatting is checked with Prettier; reviewers still inspect their
+meaning and rendering. Run the command inside `nix develop` after setup.
 
 `just smoke [--workspace PATH]` exercises the browser and service against a
 real, logged-in Codex CLI. It starts one model turn and can consume paid model

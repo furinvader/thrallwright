@@ -32,6 +32,10 @@ check-deps:
 check-commits *args:
     node scripts/check-commit-titles.mjs "$@"
 
+# Check local Markdown links and anchors without accessing external websites.
+check-docs:
+    node scripts/check-docs.mjs
+
 # Run fast tests, optionally in one package with runner arguments.
 test *args:
     pnpm test "$@"
