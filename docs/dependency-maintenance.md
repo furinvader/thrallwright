@@ -64,9 +64,9 @@ GitHub documents full-SHA pinning as the immutable form of an action reference.
 Update all occurrences of a shared action consistently and inspect the upstream
 diff; preserve the workflow's required check names and minimum permissions.
 
-The current workflows use major-version action tags. These are not immutable
-pins and are not checked by `just check-deps`; converting them is work for a
-dependency-maintenance PR. This guide does not change dependency selections.
+Workflow Actions use full commit pins with release-version comments. Inspect
+every changed reference during review: `just check-deps` checks JavaScript
+manifests, not Action references.
 Verify an action change with actual GitHub workflow runs, since local application
 tests do not execute the GitHub runner or action runtime.
 
