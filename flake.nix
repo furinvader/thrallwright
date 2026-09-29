@@ -78,6 +78,7 @@
               cp -a packages/contracts/node_modules packages/contracts/package.json packages/contracts/dist \
                 "$out/lib/thrallwright/packages/contracts/"
               cp -r apps/web/dist/browser "$out/lib/thrallwright/web"
+              install -Dm644 LICENSE "$out/share/licenses/thrallwright/LICENSE"
               rm -f "$out/lib/thrallwright/node_modules/.pnpm/node_modules/@thrallwright/web"
 
               test -f "$out/lib/thrallwright/apps/server/dist/cli.js"
@@ -97,6 +98,7 @@
 
             meta = with pkgs.lib; {
               description = "Local workbench for Codex sessions and durable workflows";
+              license = licenses.mit;
               platforms = systems;
               mainProgram = "thrallwright";
             };

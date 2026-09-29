@@ -88,3 +88,8 @@ Use type-prefixed commit subjects and PR titles, such as `feat: add a workflow s
 The product specification remains technology-neutral. The [architecture decisions](docs/decisions/README.md) record the selected implementation direction: TypeScript and Node.js, Angular and Material, WebSockets, SQLite, a Linux/Nix installation, and a pnpm workspace with `just` as the developer command interface.
 
 The repository contains `apps/server` for the local service and CLI, `apps/web` for the browser UI, and `packages/contracts` for shared validated messages. See the [code map](docs/development.md#code-map) for entry points. Material changes to the accepted direction should be recorded explicitly without silently changing product requirements.
+
+## License
+
+Thrallwright is licensed under the [MIT License](LICENSE). The Nix package includes
+the license at `share/licenses/thrallwright/LICENSE`.
