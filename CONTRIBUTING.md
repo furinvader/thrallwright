@@ -89,6 +89,9 @@ If later changes materially alter the reviewed scope, obtain authorization for
 that revision. The merged PR closes completed implementation issues; verify any
 remaining acceptance criteria before closing other issues or the tracking issue.
 
+The [release procedure](docs/releases.md) defines version preparation, release
+verification, and the separate authorization required to publish a release.
+
 ## Leave a useful handoff
 
 When pausing or transferring work, post a concise handoff in its issue or PR:
