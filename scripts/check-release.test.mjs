@@ -88,6 +88,19 @@ for (const path of ['apps/server', 'apps/web', 'packages/contracts']) {
   });
 }
 
+for (const path of ['apps/server', 'apps/web', 'packages/contracts']) {
+  test(`rejects the missing required release manifest in ${path}`, async () => {
+    const root = await fixture();
+    await rm(join(root, path, 'package.json'));
+    const errors = await checkRelease(root, version, nix());
+    assert.ok(
+      errors.includes(
+        `${path}/package.json: required release manifest is missing.`,
+      ),
+    );
+  });
+}
+
 test('rejects non-private or versioned coordinator metadata', async () => {
   const root = await fixture();
   await put(root, 'package.json', { private: false, version });

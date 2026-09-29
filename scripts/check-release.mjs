@@ -10,6 +10,13 @@ import { checkDependencies, manifestPaths } from './check-dependencies.mjs';
 const runFile = promisify(execFile);
 const stableVersion = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const codexPath = 'apps/server/src/integrations/codex.ts';
+// The release inventory has three required packages; discovery also checks any
+// additional first-party packages without treating arbitrary directories as packages.
+const requiredManifests = [
+  'apps/server/package.json',
+  'apps/web/package.json',
+  'packages/contracts/package.json',
+];
 
 function propertyName(node) {
   return node && (ts.isIdentifier(node) || ts.isStringLiteral(node))
@@ -135,8 +142,13 @@ export async function checkRelease(
         `${label}: expected ${version}, found ${JSON.stringify(actual) ?? '(missing)'}`,
       );
   };
+  const paths = await manifestPaths(root);
+  for (const path of requiredManifests) {
+    if (!paths.includes(join(root, path)))
+      errors.push(`${path}: required release manifest is missing.`);
+  }
   let workspaceCount = 0;
-  for (const path of await manifestPaths(root)) {
+  for (const path of paths) {
     const label = relative(root, path);
     let manifest;
     try {
