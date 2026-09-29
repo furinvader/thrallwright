@@ -96,12 +96,32 @@ nix develop -c just setup
 nix develop -c just ci
 ```
 
-GitHub CI runs on pull requests and pushes to `main`. New runs cancel older
-runs for the same PR or branch within each workflow. The `check` job runs setup
+GitHub CI runs on pushes to `main` and when a PR is opened, updated, reopened,
+edited, or marked ready for review. Edits include changing the target branch;
+title/body edits also run both required jobs so a metadata-only event cannot
+replace validation with skipped checks. New runs cancel older runs for the
+same PR or branch within each workflow. The `check` job runs setup
 and `just ci`; the independent `package` job runs `just package-smoke` in the
 Nix development shell. CI has read-only repository permissions and checkout
 does not persist its Git credentials. Commit naming is verified separately by
 the `commit-conventions` job.
+
+Pushing a rebase or merge of updated `main` triggers CI automatically. When
+`main` advances by itself, update the PR branch to validate against it. For a
+temporary runner or network failure on unchanged code, use GitHub's **Re-run
+failed jobs** button or `gh run rerun RUN_ID --failed`. A rerun retains the
+original commit and event context; it does not update an old run to a newer
+base. After reconciling or retargeting a stacked PR, verify checks for its
+current head and intended base before merging.
+
+CI rejects focused browser tests (`test.only`). Playwright produces a console
+summary and a non-opening HTML report; failing tests retain traces, screenshots,
+and bounded service logs (the latest 64 KiB). Videos are disabled. On failure,
+the `check` job uploads `playwright-report/` and `test-results/` for seven days;
+missing reports after an earlier setup failure do not hide that original
+failure. Retrieve them from the workflow run's artifact list. These diagnostics
+come from controlled fixtures, not real-model smoke runs. Locally, use
+`pnpm exec playwright show-report` to inspect a report.
 
 The workspace contains `packages/contracts` for browser-safe protocol schemas,
 `apps/server` for the Node service and CLI, and `apps/web` for Angular. Both
