@@ -20,9 +20,17 @@ the PR title for the squash commit title, deletes merged branches, and leaves
 automatic merging disabled.
 
 There are zero required GitHub approvals because a maintainer and an agent may
-share an account. This does not authorize an agent to merge: Alex must
-explicitly authorize each PR's merge. An agent's independent review is useful
-evidence, not a substitute for that authorization.
+share an account. Every PR still requires
+[independent acceptance of its current base/head](../CONTRIBUTING.md#independent-review)
+through GitHub's review feature. Same-account `COMMENT` acceptance is a mandatory
+procedural gate and is not a formal `APPROVED` review. Alex must explicitly
+authorize each PR's merge; reviewer acceptance does not supply that authority.
+
+[Issue #43](https://github.com/furinvader/thrallwright/issues/43) owns future
+evaluation of a distinct reviewer identity for native approval enforcement.
+Keep zero formal approvals until a legitimate independent approval is proven
+to satisfy the proposed rule. No reviewer account, bypass, or Codex review
+integration is introduced by the current workflow.
 
 ### Inspect before applying
 

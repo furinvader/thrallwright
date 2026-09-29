@@ -146,11 +146,13 @@ It ignores GitHub's synthetic test-merge commit and audits only newly introduced
 commits on pushes to `main`. The script reads event JSON directly, so titles are
 treated as data. No additional Node packages are needed.
 
-To enforce the check before merging, configure a GitHub ruleset or branch
-protection for `main` that requires pull requests and the `commit-conventions`
-status check. The push check is an audit after a commit reaches `main`; it cannot
-block a direct push retroactively. Repository settings are separate from the
-workflow file. See [GitHub's required status checks](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-status-checks-to-pass-before-merging).
+The reviewed main-branch policy requires PRs and the `check`, `package`, and
+`commit-conventions` checks. See the [maintainer guide](maintaining.md#main-branch-and-merge-settings)
+for the authoritative configuration and live inspection procedure. Repository
+settings are separate from workflow files; push checks audit commits already on
+`main` and do not retroactively block a push. Follow the
+[independent review and merge policy](../CONTRIBUTING.md#independent-review)
+before merging, including when agent reviewers share the author's account.
 
 ## Code map
 

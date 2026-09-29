@@ -48,19 +48,58 @@ description aligned with the final change as its scope develops.
 
 ## Make the PR reviewable
 
-Open a draft PR when work or dependencies remain. Link its issue and explain the
+Open a draft PR while its implementation or validation is incomplete. Link its issue and explain the
 problem, resulting behavior, validation actually performed, and relevant
 documentation or architecture changes. Use a closing reference such as
 `Closes #123` only when merging will satisfy the issue's acceptance criteria.
 An administrative action or other outstanding work keeps its issue open after
-the documentation PR merges.
+the documentation PR merges. Use `Refs #123` or a plain issue link in that case.
+Avoid closing keywords even in negated prose: GitHub may still recognize them.
 
-Mark the PR ready when its scope is implemented, relevant specifications are
-updated, applicable checks pass, and known review findings are addressed or
-explicitly resolved with the maintainer. Record independent human or agent review
-when available, identifying the reviewer and revision reviewed. Self-review and
-automated checks are useful evidence but must not be described as independent
-review. Unresolved blockers belong in the issue and PR, with the PR kept in draft.
+State the PR's narrow outcome, acceptance criteria, and exclusions. Mark it
+non-draft when that scope is implemented, specifications are updated, and
+applicable validation passes, before requesting independent review. A dependent
+PR may be reviewed against its explicitly named temporary base once its own
+scope is complete. It cannot merge until its prerequisites have merged and it
+has been reconciled, validated, and reviewed against current `main`.
+
+## Independent review
+
+Every PR needs an independent human or agent reviewer who did not implement its
+changes. Self-review and automated checks are useful evidence but are not
+independent review. Review the actual diff and its consequences against the
+linked acceptance criteria; changes to workflows or validators require the
+same scrutiny as application code. A green check alone cannot establish that
+the PR preserved the meaning of that check.
+
+Use GitHub's official pull-request review feature, including inline findings
+where useful. Record the reviewer identity (including agent/task identity when
+accounts are shared), base and head commit IDs, scope, and an explicit outcome:
+`Accepted` or `Changes requested`. A shared account cannot formally approve its
+own PR, so independent agents using it submit a `COMMENT` review with that
+outcome. This is a procedural acceptance record, not a GitHub `APPROVED` review.
+`@codex review` is not part of this workflow.
+
+Resolve findings in one of these ways, recording the evidence in the review:
+
+- Fix a valid finding within the PR's scope and have the reviewer verify it.
+- Explain why a finding is invalid and obtain the reviewer's agreement.
+- For an independent, unrelated defect, open and link a scoped follow-up issue
+  or PR and obtain the reviewer's agreement that this resolves the finding for
+  the current PR. Do not hide a regression introduced by this PR by moving it
+  into a new ticket.
+
+Repeat correction and independent review until the current revision is
+accepted; there is no fixed iteration limit. New head or base revisions
+invalidate earlier acceptance and need renewed review, including after a rebase
+or retarget. Keep reviewer-approved follow-ups visible without expanding this
+PR into unrelated work. If the work cannot converge, narrow or split the scope
+with the maintainer, or leave a handoff; do not merge unresolved blockers.
+Return to draft if scope or implementation becomes incomplete, then mark
+non-draft again before the next independent review. Resolving a GitHub thread
+alone does not establish reviewer acceptance.
+
+## Validation and merging
 
 Choose validation based on the affected behavior:
 
@@ -90,10 +129,31 @@ Record outstanding live verification without claiming it passed. Preserve the
 distinction in the [first-slice evidence](docs/first-slice.md#14-verification-record).
 
 Once Alex authorizes the specific PR, the authorized merger verifies the current
-diff, resolved review conversations, and required checks before squash merging.
-If later changes materially alter the reviewed scope, obtain authorization for
-that revision. The merged PR closes completed implementation issues; verify any
-remaining acceptance criteria before closing other issues or the tracking issue.
+diff, independent acceptance of its current base/head, resolved review
+conversations, and required checks before squash merging. If later changes
+materially alter the authorized scope, obtain authorization for that revision.
+Reviewer acceptance does not supply merge authorization. Required checks and
+the repository's zero formal approval count cannot enforce the same-account
+acceptance record; humans and agents must verify it before merging.
+
+Record concise merge evidence in the PR, for example:
+
+```text
+Owner: contributor or agent/task identity
+Scope: issue and acceptance criteria
+Reviewed base / head: full commit IDs
+Independent review: review URL, reviewer identity, Accepted
+Findings: fixed/invalid/deferred with reviewer agreement and links
+Checks: links to successful required checks for the current revision
+Authorization: Alex's instruction/link, PR and scope it covers
+Remaining issue criteria: none, or administrative work with owner and link
+```
+
+Close an implementation issue only after reviewer acceptance, merge, and
+satisfaction of its acceptance criteria. Verify remaining administrative work
+before closing its issue or the tracking issue; neither approval nor a merged
+documentation PR proves activation. Do not manually close an implementation
+ticket before its PR has independent acceptance.
 
 The [release procedure](docs/releases.md) defines version preparation, release
 verification, and the separate authorization required to publish a release.
