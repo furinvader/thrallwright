@@ -36,7 +36,7 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: warn
   package:
     runs-on: ubuntu-latest
     steps:
