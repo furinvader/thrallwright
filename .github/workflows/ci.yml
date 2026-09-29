@@ -2,28 +2,36 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
       - name: Install and prepare workspace
         run: nix develop -c just setup
-      - name: Check source and fast tests
-        run: nix develop -c just check
-      - name: Build release assets
-        run: nix develop -c just build
-      - name: Test browser workflows
-        run: nix develop -c just test-e2e
+      - name: Check source, fast tests, and browser workflows
+        run: nix develop -c just ci
   package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
