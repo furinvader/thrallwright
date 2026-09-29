@@ -9,6 +9,7 @@
     "check": "ng build"
   },
   "private": true,
+  "license": "MIT",
   "dependencies": {
     "@angular/common": "22.2.0",
     "@angular/compiler": "22.2.0",

@@ -133,6 +133,13 @@ function storedWorkspace() {
 }
 
 try {
+  const [sourceLicense, installedLicense] = await Promise.all([
+    readFile(new URL('../LICENSE', import.meta.url)),
+    readFile(path.join(packageRoot, 'share/licenses/thrallwright/LICENSE')),
+  ]);
+  if (!sourceLicense.equals(installedLicense))
+    throw new Error('Installed license differs from the source LICENSE');
+
   let firstDatabase;
   for (let attempt = 0; attempt < 2; attempt++) {
     const app = await launch();
@@ -155,7 +162,7 @@ try {
   if (!page.includes('<app-root'))
     throw new Error('Installed browser asset is missing');
   console.log(
-    'Packaged service, browser assets, native SQLite, and profile restart passed.',
+    'Packaged license, service, browser assets, native SQLite, and profile restart passed.',
   );
 } finally {
   await rm(temporary, { recursive: true, force: true });
