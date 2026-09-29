@@ -79,6 +79,9 @@ result, and relevant environment or revision, and distinguish passed checks from
 checks not run or blocked. Repeat affected checks after changes invalidate their
 evidence.
 
+For dependency updates, follow the monthly review and verification procedure in
+[Dependency maintenance](docs/dependency-maintenance.md).
+
 Ordinary checks use controlled fixtures without paid model calls. Run real-model
 checks deliberately within the authorized task, following the documented
 `just probe --smoke` and `just smoke` procedures. State their model usage and
