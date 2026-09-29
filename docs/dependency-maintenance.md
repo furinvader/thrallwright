@@ -89,10 +89,14 @@ issue #41:
 3. Verify the first processed run: the dashboard exists, there are no unselected
    routine PRs, and there are no configuration or artifact-update errors. Record
    actual evidence and any remaining owner action in the activation issue.
-4. The first deliberately selected update supplies end-to-end evidence: draft
-   proposal, ownership handoff, complete package/hash validation, non-draft
-   independent review, and authorized merge. Do not select an unnecessary update
-   merely to demonstrate onboarding.
+
+Verified installation and repository scope, required settings, and the first
+processed run complete activation. Record that evidence in issue #41 before
+closing it. Track the first deliberately selected update in an owned monthly
+maintenance issue linked from #41. That later PR supplies end-to-end evidence:
+draft proposal, ownership handoff, complete package/hash validation, non-draft
+independent review, and authorized merge. Do not select an unnecessary update
+merely to demonstrate onboarding.
 
 If installation or account consent requires Alex's browser, record the exact
 action and keep the activation issue open. Merging configuration alone does not
