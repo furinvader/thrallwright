@@ -28,7 +28,8 @@ function plainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-async function manifestPaths(root) {
+/** Discover only the coordinator and immediate first-party workspace manifests. */
+export async function manifestPaths(root) {
   const paths = [join(root, 'package.json')];
   // The first-party workspace patterns are apps/* and packages/*.
   // Only their immediate child manifests count; installed and generated nested
@@ -110,6 +111,10 @@ export async function checkDependencies(rootDirectory) {
         const location = `${label} ${section} ${name}`;
         if (typeof spec !== 'string') {
           errors.push(`${location}: expected an exact version string`);
+        } else if (workspace.has(name) && !spec.startsWith('workspace:')) {
+          errors.push(
+            `${location}: local package requires workspace:${workspace.get(name)}`,
+          );
         } else if (spec.startsWith('workspace:')) {
           const requested = spec.slice('workspace:'.length);
           if (!isExactSemver(requested))
