@@ -38,6 +38,10 @@ with the normal application profile. Extra `just dev` arguments go to the
 service CLI; `--workflow tasks.json` reads a JSON file relative to the checkout
 workspace and saves that selection in the development profile.
 
+Coordinate one interactive `just dev` owner per machine. Its browser, proxy,
+and readiness URLs still use fixed ports; separate worktrees or passing only
+`--port` do not isolate that complete development loop.
+
 Run `just` to list recipes. Routine checks and builds are:
 
 ```sh
@@ -63,6 +67,14 @@ probe` checks Codex through read-only RPCs. `just probe --smoke` additionally
 starts ephemeral model turns and tests interruption; it requires Codex
 authentication and may incur model usage. Ordinary checks need no Codex
 credentials or paid model calls.
+
+Browser tests start one service per test with an OS-assigned loopback port and
+a unique temporary workspace and profile. Each run reads its own service
+announcement, waits for health with a deadline, and stops its process group
+before removing temporary state. Separate prebuilt worktrees can run browser
+tests concurrently; avoid concurrent builds in the same worktree. This prevents
+port and state collisions, but is not an execution security boundary. See the
+[future isolation plan](test-isolation.md) for the deferred container approach.
 
 `just smoke [--workspace PATH]` exercises the browser and service against a
 real, logged-in Codex CLI. It starts one model turn and can consume paid model
