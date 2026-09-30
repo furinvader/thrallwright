@@ -7,6 +7,10 @@ about: Define an observable outcome and the scope of the work.
 
 <!-- What needs to improve, and for whom? Link relevant examples or requirements. -->
 
+## Coordinating owner
+
+<!-- Name the human or agent/task owner, especially when contributors share one account. -->
+
 ## Intended result
 
 <!-- Describe the observable behavior or deliverable, without prescribing unnecessary implementation details. -->
