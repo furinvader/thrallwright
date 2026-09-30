@@ -45,6 +45,10 @@ check-docs:
 check-repo-settings:
     node scripts/check-repo-settings.mjs
 
+# Check release metadata against a proposed version without publishing.
+check-release *args:
+    node scripts/check-release.mjs "$@"
+
 # Run fast tests, optionally in one package with runner arguments.
 test *args:
     pnpm test "$@"
