@@ -12,8 +12,9 @@
     "dev": "node scripts/dev.mjs",
     "test": "node --test scripts/*.test.mjs && node scripts/test.mjs",
     "test:e2e": "playwright test",
-    "check": "pnpm check:deps && pnpm format:check && pnpm lint && pnpm build && pnpm test",
+    "check": "pnpm check:deps && pnpm check:docs && pnpm format:check && pnpm lint && pnpm build && pnpm test",
     "check:deps": "node scripts/check-dependencies.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
