@@ -2,7 +2,8 @@
 
 Thrallwright currently targets Linux on `x86_64` and `aarch64`. The flake pins
 Nixpkgs, Node 24, pnpm 10, the Codex CLI, native build tools, Chromium, and
-`just`. The pnpm lockfile pins JavaScript packages. Each target workspace still
+`just`, and the Renovate configuration validator. The pnpm lockfile pins
+JavaScript packages. Each target workspace still
 provides its own project dependencies; Thrallwright does not change that
 workspace's toolchain.
 
@@ -54,8 +55,8 @@ just build
 just format
 ```
 
-`just check` checks exact dependency declarations, local documentation links,
-formatting, lint, compilation,
+`just check` checks Renovate policy, exact dependency declarations, local
+documentation links, formatting, lint, compilation,
 and fast tests without rewriting files. `just ci` runs `just check` followed by
 browser workflows using the freshly built assets, so the application is built
 once. `just format` is the explicit rewrite command. `just test` runs all fast
@@ -85,6 +86,11 @@ and ADRs regardless of formatting exclusions. Deleted input documents are not
 read, but links targeting them fail. External URLs are not checked. GitHub
 template formatting is checked with Prettier; reviewers still inspect their
 meaning and rendering. Run the command inside `nix develop` after setup.
+
+`just check-renovate` runs the pinned strict Renovate validator and offline
+policy cases using the same Renovate implementation. It checks bot configuration;
+the [dependency-maintenance guide](dependency-maintenance.md) separately defines
+dashboard selection, review, and live activation verification.
 
 `just smoke [--workspace PATH]` exercises the browser and service against a
 real, logged-in Codex CLI. It starts one model turn and can consume paid model

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["npm", "github-actions"],
+  "dependencyDashboard": true,
+  "dependencyDashboardApproval": true,
+  "dependencyDashboardAutoclose": false,
+  "dependencyDashboardHeader": "Alex (furinvader) selects routine updates, or delegates selection in an explicit dependency-maintenance task. Selection authorizes preparation only; every merge requires independent review and Alex's authorization. See docs/dependency-maintenance.md.",
+  "minimumReleaseAge": "30 days",
+  "minimumReleaseAgeBehaviour": "timestamp-required",
+  "internalChecksFilter": "strict",
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 2,
+  "schedule": [],
+  "automerge": false,
+  "platformAutomerge": false,
+  "draftPR": true,
+  "prCreation": "immediate",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "rebaseWhen": "behind-base-branch",
+  "stopUpdatingLabel": "stop-updating",
+  "lockFileMaintenance": { "enabled": false },
+  "ignoreScripts": true,
+  "ignoreUnstable": true,
+  "separateMajorMinor": true,
+  "pin": { "groupName": null },
+  "pinDigest": { "groupName": null },
+  "prBodyNotes": [
+    "This draft is a proposal. Record an owner and apply `stop-updating` before adding Nix dependency-cache hashes or migrations; the owner then handles reconciliation with main. Mark ready only after completing applicable checks, then request independent review. Dashboard selection is not merge authorization."
+  ],
+  "packageRules": [
+    {
+      "description": "Only declared JavaScript dependencies are bot-managed.",
+      "matchManagers": ["npm"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": [
+        "dependencies",
+        "devDependencies",
+        "optionalDependencies",
+        "peerDependencies"
+      ],
+      "enabled": true,
+      "rangeStrategy": "pin"
+    },
+    {
+      "description": "Project package versions and workspace references change together manually.",
+      "matchManagers": ["npm"],
+      "matchDepNames": ["@thrallwright/**"],
+      "enabled": false
+    },
+    {
+      "description": "Runner images and action runtime inputs remain part of manual toolchain review.",
+      "matchManagers": ["github-actions"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action", "workflow"],
+      "enabled": true,
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "@angular/common",
+        "@angular/compiler",
+        "@angular/core",
+        "@angular/forms",
+        "@angular/platform-browser",
+        "@angular/build",
+        "@angular/cli",
+        "@angular/compiler-cli"
+      ],
+      "groupName": "Angular framework and build tools"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@angular/material", "@angular/cdk"],
+      "groupName": "Angular Material and CDK"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["angular-eslint", "@angular-eslint/**"],
+      "groupName": "Angular ESLint"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": false,
+    "minimumReleaseAge": null,
+    "schedule": [],
+    "prCreation": "immediate",
+    "groupName": null,
+    "vulnerabilityFixStrategy": "lowest",
+    "prConcurrentLimit": 0,
+    "automerge": false
+  }
+}
