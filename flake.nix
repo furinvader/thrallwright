@@ -136,6 +136,7 @@
               curl
               git
               lychee
+              gh
             ];
             npm_config_nodedir = node;
             npm_config_build_from_source = "true";
