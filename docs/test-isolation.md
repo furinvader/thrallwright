@@ -1,14 +1,14 @@
 # Future test execution isolation
 
 Status: planned, not implemented. Track scope, ownership, and delivery in
-[issue #42](https://github.com/furinvader/thrallwright/issues/42); this note is a
-design starting point, not a second backlog or a claim of current isolation.
+[issue #42](https://github.com/furinvader/thrallwright/issues/42); this note is
+a design starting point, not a second backlog or a claim of current isolation.
 
 Current browser tests use OS-assigned ports, per-test temporary state, bounded
 startup and health waits, and process-group cleanup. Separate prebuilt worktrees
 can run them concurrently. The Nix development shell supplies pinned tools; it
-does not isolate networking, credentials, or execution from the host. Interactive
-`just dev` still requires one coordinated owner per machine.
+does not isolate networking, credentials, or execution from the host.
+Interactive `just dev` still requires one coordinated owner per machine.
 
 The next step is a disposable rootless container per complete validation run.
 Keep the service, Chromium, and controlled harness fixtures together inside it,
