@@ -2,34 +2,35 @@
 
 Alex (`furinvader`) owns repository administration and merge authorization.
 GitHub issues record unfinished work and its owner; PRs record implementation
-and verification. This guide records reusable administrative procedures.
-See the [contribution workflow](../CONTRIBUTING.md) for task and PR policy.
+and verification. This guide records reusable administrative procedures. See the
+[contribution workflow](../CONTRIBUTING.md) for task and PR policy.
 
 ## Main branch and merge settings
 
 The reviewed target configuration lives in
 [main-ruleset.json](../.github/main-ruleset.json) and
-[repository-settings.json](../.github/repository-settings.json).
-Committing those files does **not** apply them to GitHub.
+[repository-settings.json](../.github/repository-settings.json). Committing
+those files does **not** apply them to GitHub.
 
-The intended rules require a PR, resolved review conversations, and the
-`check`, `package`, and `commit-conventions` checks from GitHub Actions. The PR
-must be current with `main`. Main cannot be deleted or force-pushed, and no
-actors have a standing bypass. The repository allows only squash merges, uses
-the PR title for the squash commit title, deletes merged branches, and leaves
-automatic merging disabled.
+The intended rules require a PR, resolved review conversations, and the `check`,
+`package`, and `commit-conventions` checks from GitHub Actions. The PR must be
+current with `main`. Main cannot be deleted or force-pushed, and no actors have
+a standing bypass. The repository allows only squash merges, uses the PR title
+for the squash commit title, deletes merged branches, and leaves automatic
+merging disabled.
 
 There are zero required GitHub approvals because a maintainer and an agent may
 share an account. Every PR still requires
 [independent acceptance of its current base/head](../CONTRIBUTING.md#independent-review)
-through GitHub's review feature. Same-account `COMMENT` acceptance is a mandatory
-procedural gate and is not a formal `APPROVED` review. Alex must explicitly
-authorize each PR's merge; reviewer acceptance does not supply that authority.
+through GitHub's review feature. Same-account `COMMENT` acceptance is a
+mandatory procedural gate and is not a formal `APPROVED` review. Alex must
+explicitly authorize each PR's merge; reviewer acceptance does not supply that
+authority.
 
 [Issue #43](https://github.com/furinvader/thrallwright/issues/43) owns future
-evaluation of a distinct reviewer identity for native approval enforcement.
-Keep zero formal approvals until a legitimate independent approval is proven
-to satisfy the proposed rule. No reviewer account, bypass, or Codex review
+evaluation of a distinct reviewer identity for native approval enforcement. Keep
+zero formal approvals until a legitimate independent approval is proven to
+satisfy the proposed rule. No reviewer account, bypass, or Codex review
 integration is introduced by the current workflow.
 
 ### Inspect before applying
@@ -39,11 +40,11 @@ Thrallwright's live settings with the two checked-in JSON files. The pinned
 GitHub CLI must be authenticated with access to inspect repository rules. The
 command always targets `furinvader/thrallwright`, prints a timestamp and ruleset
 identity, checks configured and effective rules and merge settings, and reports
-additional effective rules or classic protection for maintainer inspection.
-It exits nonzero on drift or incomplete verification; authentication or network
+additional effective rules or classic protection for maintainer inspection. It
+exits nonzero on drift or incomplete verification; authentication or network
 failure never means that protection is absent. It uses only GET requests and
-does not repair settings. This credentialed check is outside ordinary CI; run
-it after settings changes and during maintenance.
+does not repair settings. This credentialed check is outside ordinary CI; run it
+after settings changes and during maintenance.
 
 Use an authenticated GitHub CLI with repository administration permission. Run
 these commands from the repository root:
@@ -59,14 +60,14 @@ A `Branch not protected` 404 means no classic branch protection was found;
 rulesets must still be inspected separately. A permissions or network failure
 does not establish that protection is absent. The configured integration ID
 `15368` was verified as `github-actions` on this repository's checks. Confirm
-that association again before applying, especially if adapting this procedure
-to another GitHub installation.
+that association again before applying, especially if adapting this procedure to
+another GitHub installation.
 
 ### Apply the reviewed configuration
 
 After Alex authorizes the settings rollout, inspect all existing rulesets and
-classic protection first. Preserve unrelated rules. If no `Protect main`
-ruleset exists, create it once:
+classic protection first. Preserve unrelated rules. If no `Protect main` ruleset
+exists, create it once:
 
 ```sh
 gh api --method POST repos/furinvader/thrallwright/rulesets --input .github/main-ruleset.json
@@ -110,8 +111,8 @@ Compare every configured field with the two checked-in files. Confirm active
 enforcement, the exact branch, no bypass actors, all three check names and their
 app IDs, strict current-base checking, conversation resolution, zero required
 approvals, and both force-push/deletion restrictions. GitHub may return extra
-default fields. Inspect a current PR's merge requirements as a second check;
-do not attempt destructive pushes to test the rules.
+default fields. Inspect a current PR's merge requirements as a second check; do
+not attempt destructive pushes to test the rules.
 
 Record the date, ruleset ID, relevant PR, readback results, and any remaining
 actions in the administration issue. Close that issue only when the settings
@@ -123,8 +124,8 @@ change; record its reason and restore and verify the intended configuration.
 
 The initial inspection on 2026-09-29 found no rulesets or classic protection.
 Squash-only merging and PR-title squash messages were already configured;
-merged-branch deletion was disabled and auto-merge was disabled. This is a
-dated observation, not a claim about current effective settings.
+merged-branch deletion was disabled and auto-merge was disabled. This is a dated
+observation, not a claim about current effective settings.
 
 [Issue #20](https://github.com/furinvader/thrallwright/issues/20) owns the first
 protection rollout. Record authorization, application, and readback there using

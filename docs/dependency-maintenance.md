@@ -7,39 +7,41 @@ assigned dependency-maintenance task. Selection authorizes preparation only.
 Every merge still requires independent review and Alex's explicit authorization.
 Address urgent security or compatibility fixes sooner.
 
-Record each review in a GitHub issue, including its date, owner, dependency groups
-reviewed, selected updates or reasons to defer them, and linked PRs. A review that
-finds no changes still records that result. Keep deferred work linked and visible.
-Follow the [contribution workflow](../CONTRIBUTING.md) for implementation, review,
-and merge authorization.
+Record each review in a GitHub issue, including its date, owner, dependency
+groups reviewed, selected updates or reasons to defer them, and linked PRs. A
+review that finds no changes still records that result. Keep deferred work
+linked and visible. Follow the [contribution workflow](../CONTRIBUTING.md) for
+implementation, review, and merge authorization.
 
 ## Renovate proposals
 
 The reviewed policy is in [renovate.json](../renovate.json). Hosting and live
-activation are separate from this configuration; [activation issue #41](https://github.com/furinvader/thrallwright/issues/41)
+activation are separate from this configuration;
+[activation issue #41](https://github.com/furinvader/thrallwright/issues/41)
 records the owner, outstanding steps, and actual verification. Until that issue
 records successful activation, do not assume the bot or its security proposals
 are running.
 
 Use the hosted Renovate GitHub App for this repository only. Its dashboard stays
-open and current; the monthly human review does not restrict the bot to a monthly
-processing window. Routine proposals require dashboard selection and releases at
-least 30 days old. A missing release timestamp holds the update. Keep at most two
-routine PRs open and create at most two per hour. Prereleases and broad lockfile
-maintenance are not enabled. Major updates remain visible and separately
-selectable; record a scoped migration issue before selecting one.
+open and current; the monthly human review does not restrict the bot to a
+monthly processing window. Routine proposals require dashboard selection and
+releases at least 30 days old. A missing release timestamp holds the update.
+Keep at most two routine PRs open and create at most two per hour. Prereleases
+and broad lockfile maintenance are not enabled. Major updates remain visible and
+separately selectable; record a scoped migration issue before selecting one.
 
 Only JavaScript dependency declarations and GitHub Action/reusable-workflow
 references are managed. Keep exact JavaScript pins and full Action commit SHAs
 with release-version comments. Local package versions, workspace references,
-Node engines, the pnpm `packageManager` declaration, Nix snapshots, runner images,
-and action runtime inputs remain manual. Angular framework/build packages move
-as one group; Material/CDK and Angular ESLint form separate groups. Select other
-updates individually and check compatibility before combining required changes.
+Node engines, the pnpm `packageManager` declaration, Nix snapshots, runner
+images, and action runtime inputs remain manual. Angular framework/build
+packages move as one group; Material/CDK and Angular ESLint form separate
+groups. Select other updates individually and check compatibility before
+combining required changes.
 
-Renovate creates drafts and never merges, enables platform automerge, or receives
-a branch-protection bypass. A draft proposal may need migrations or a new Nix
-dependency-cache hash before it is ready. An assigned implementer:
+Renovate creates drafts and never merges, enables platform automerge, or
+receives a branch-protection bypass. A draft proposal may need migrations or a
+new Nix dependency-cache hash before it is ready. An assigned implementer:
 
 1. Records ownership in the PR and applies the `stop-updating` label before
    editing the branch. This pauses Renovate's updates; the implementer then owns
@@ -53,30 +55,31 @@ dependency-cache hash before it is ready. An assigned implementer:
    never supply that authorization.
 
 Security-remediation proposals may appear immediately without routine selection,
-release-age, scheduling, or routine-PR-limit gates. They prefer the lowest fixing
-version and remain drafts until completed. All review and merge rules still
-apply. Renovate reads GitHub's Dependabot alerts: the dependency graph, alerts,
-and the App's read access to alerts must be active. Keep Dependabot's automatic
-security-update PR generation disabled to avoid a second update bot.
+release-age, scheduling, or routine-PR-limit gates. They prefer the lowest
+fixing version and remain drafts until completed. All review and merge rules
+still apply. Renovate reads GitHub's Dependabot alerts: the dependency graph,
+alerts, and the App's read access to alerts must be active. Keep Dependabot's
+automatic security-update PR generation disabled to avoid a second update bot.
 
 Release age is not proof of trustworthiness. Renovate's direct update gate does
 not guarantee that every newly resolved transitive pnpm dependency is 30 days
 old; inspect the full lockfile. Action digest updates may use their associated
 version's timestamp, which is not proof of the digest's publication age. Verify
 the upstream tag and commit as well. For updates held by absent timestamps, use
-an explicitly reviewed manual update or narrowly scoped policy exception; do
-not relax the repository-wide timestamp requirement. See Renovate's
+an explicitly reviewed manual update or narrowly scoped policy exception; do not
+relax the repository-wide timestamp requirement. See Renovate's
 [release-age limitations](https://docs.renovatebot.com/key-concepts/minimum-release-age/)
 and [dashboard workflow](https://docs.renovatebot.com/key-concepts/dashboard/).
 
 ## Validate and activate the bot
 
 Run `just check-renovate` inside `nix develop`; `just check` includes it. The
-locked Nixpkgs supplies Renovate 44.104.0 and its strict validator. Offline policy
-checks use that implementation's extraction, package-rule resolution, and release
-filtering against controlled cases. They establish configuration behavior, not
-that a hosted App was installed or that real security alerts were processed.
-Do not replace the pinned validator with an unpinned `npx` invocation.
+locked Nixpkgs supplies Renovate 44.104.0 and its strict validator. Offline
+policy checks use that implementation's extraction, package-rule resolution, and
+release filtering against controlled cases. They establish configuration
+behavior, not that a hosted App was installed or that real security alerts were
+processed. Do not replace the pinned validator with an unpinned `npx`
+invocation.
 
 After the configuration and Action-pin PRs merge, the activation owner follows
 issue #41:
@@ -84,8 +87,8 @@ issue #41:
 1. Install/configure the hosted App with access only to Thrallwright. Do not
    grant a protection bypass or add credentials to repository files.
 2. Verify the dependency graph, enable Dependabot alerts, and verify the App's
-   read access to alerts. Alerts were disabled during the 2026-09-29 audit.
-   Keep Dependabot security-update PR generation disabled.
+   read access to alerts. Alerts were disabled during the 2026-09-29 audit. Keep
+   Dependabot security-update PR generation disabled.
 3. Verify the first processed run: the dashboard exists, there are no unselected
    routine PRs, and there are no configuration or artifact-update errors. Record
    actual evidence and any remaining owner action in the activation issue.
@@ -102,7 +105,8 @@ If installation or account consent requires Alex's browser, record the exact
 action and keep the activation issue open. Merging configuration alone does not
 complete that issue. Pause a bot-owned PR with `stop-updating`; to suspend the
 integration as a whole, the maintainer can suspend its repository access and
-record the reason and restoration conditions in the activation/maintenance issue.
+record the reason and restoration conditions in the activation/maintenance
+issue.
 
 ## Review and group updates
 
@@ -117,8 +121,8 @@ The review covers three dependency sources:
 
 - JavaScript manifests and `pnpm-lock.yaml`, including development tools and
   transitive changes. Check peer requirements and native SQLite compatibility.
-- GitHub Actions in `.github/workflows/`, including action release notes, runtime
-  requirements, permissions, and compatibility with the selected runner.
+- GitHub Actions in `.github/workflows/`, including action release notes,
+  runtime requirements, permissions, and compatibility with the selected runner.
 - The Nixpkgs input in `flake.nix` and `flake.lock`, which selects Node, pnpm,
   Codex, Chromium, native tools, and runtime libraries together.
 
@@ -126,8 +130,9 @@ The review covers three dependency sources:
 
 Use the [deliberate update procedure](development.md#dependency-versions).
 Preserve exact versions in every dependency declaration and
-`workspace:<exact version>` for local packages. Routine installs use the committed
-frozen lockfile; do not delete it or disable frozen installs to work around drift.
+`workspace:<exact version>` for local packages. Routine installs use the
+committed frozen lockfile; do not delete it or disable frozen installs to work
+around drift.
 
 Select an explicit version with `pnpm add`, or intentionally regenerate the
 lockfile with `pnpm install --no-frozen-lockfile` after manual manifest edits.
@@ -144,9 +149,9 @@ When the resolved graph changes, update the Nix dependency cache deliberately:
    commit the fake hash or bypass integrity checking.
 
 A manifest-only pin change to an already locked version may leave the cache hash
-unchanged. A Nixpkgs or pnpm fetcher change can alter the cache format even if the
-JavaScript graph is unchanged; investigate the cause and use the same procedure
-when a new cache hash is needed.
+unchanged. A Nixpkgs or pnpm fetcher change can alter the cache format even if
+the JavaScript graph is unchanged; investigate the cause and use the same
+procedure when a new cache hash is needed.
 
 ## GitHub Actions
 
@@ -164,8 +169,8 @@ manifests, not Action references. The initial conversion is recorded in
 pins before bot activation. Renovate configuration does not itself select new
 Action versions.
 
-Verify an action change with actual GitHub workflow runs, since local application
-tests do not execute the GitHub runner or action runtime.
+Verify an action change with actual GitHub workflow runs, since local
+application tests do not execute the GitHub runner or action runtime.
 
 ## Nix toolchain
 
@@ -192,8 +197,8 @@ an `x86_64-linux` run does not verify `aarch64-linux`.
 
 ## Verification and completion
 
-Dependency and toolchain updates need `just check` and `just package-smoke`.
-Run `just test-e2e` when browser behavior, framework/build tools, Chromium,
+Dependency and toolchain updates need `just check` and `just package-smoke`. Run
+`just test-e2e` when browser behavior, framework/build tools, Chromium,
 contracts, or service integration may be affected; a Nixpkgs update changes the
 broader toolchain and needs that browser check. Record successful GitHub checks
 on the final PR revision as well as relevant local evidence.
@@ -209,5 +214,6 @@ Real-model verification is deliberate and separate: use the documented
 task. Record the exact Codex version, date, tested behavior, and sanitized
 reports. Fixture tests and a successful no-tool model turn do not establish live
 approval routing. If credentials, model usage, or environment prevent a live
-check, record the missing evidence and owner in the PR/issue for the maintainer's
-merge decision; do not relabel old or controlled evidence as a new live result.
+check, record the missing evidence and owner in the PR/issue for the
+maintainer's merge decision; do not relabel old or controlled evidence as a new
+live result.

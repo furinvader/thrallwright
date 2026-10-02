@@ -1,6 +1,8 @@
 # Conceptual model
 
-This document defines concepts and relationships that implementations need to preserve. It is not a database schema, class diagram, API specification, or instruction to use any particular architecture.
+This document defines concepts and relationships that implementations need to
+preserve. It is not a database schema, class diagram, API specification, or
+instruction to use any particular architecture.
 
 ## 1. Workspace
 
@@ -19,7 +21,8 @@ The first implementation may have exactly one active workspace.
 
 ## 2. Harness integration
 
-A **Harness Integration** describes how Thrallwright observes and controls an existing agent environment.
+A **Harness Integration** describes how Thrallwright observes and controls an
+existing agent environment.
 
 Conceptual properties:
 
@@ -29,27 +32,28 @@ Conceptual properties:
 - capabilities;
 - integration-level errors or warnings.
 
-An integration is a capability provider, not necessarily the owner of session persistence.
+An integration is a capability provider, not necessarily the owner of session
+persistence.
 
 ### Capability set
 
 Capabilities should be independently representable. Examples:
 
-| Capability | Meaning |
-| --- | --- |
-| discover sessions | Existing sessions can be enumerated. |
-| start session | Thrallwright can create a new session through the harness. |
-| observe status | The harness exposes current session state. |
-| read history | Historical observable activity can be retrieved. |
-| stream activity | New observable activity can be followed live. |
-| send input | User input can be delivered to the session. |
-| observe approvals | Structured approval requests are exposed. |
-| answer approvals | Structured approval responses can be sent. |
-| interrupt | Current execution can be interrupted. |
-| stop | Live execution can be terminated. |
-| resume | A saved conversation can be resumed through the harness. |
-| relationships | Parent/child session relationships are exposed. |
-| artifacts | Produced artifacts are exposed as structured data. |
+| Capability        | Meaning                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| discover sessions | Existing sessions can be enumerated.                       |
+| start session     | Thrallwright can create a new session through the harness. |
+| observe status    | The harness exposes current session state.                 |
+| read history      | Historical observable activity can be retrieved.           |
+| stream activity   | New observable activity can be followed live.              |
+| send input        | User input can be delivered to the session.                |
+| observe approvals | Structured approval requests are exposed.                  |
+| answer approvals  | Structured approval responses can be sent.                 |
+| interrupt         | Current execution can be interrupted.                      |
+| stop              | Live execution can be terminated.                          |
+| resume            | A saved conversation can be resumed through the harness.   |
+| relationships     | Parent/child session relationships are exposed.            |
+| artifacts         | Produced artifacts are exposed as structured data.         |
 
 No integration is assumed to support all capabilities.
 
@@ -82,15 +86,17 @@ A session can exist as historical data without having a live process.
 
 Thrallwright needs a conservative status vocabulary:
 
-| Status | Meaning |
-| --- | --- |
-| running | The source reports active execution. |
-| waiting | The source reports a known wait for user input, approval, or another condition. |
-| finished | The source reports completed work. |
-| disconnected | The session is known, but live observation/control is unavailable. |
-| unknown | Available evidence is insufficient for another status. |
+| Status       | Meaning                                                                         |
+| ------------ | ------------------------------------------------------------------------------- |
+| running      | The source reports active execution.                                            |
+| waiting      | The source reports a known wait for user input, approval, or another condition. |
+| finished     | The source reports completed work.                                              |
+| disconnected | The session is known, but live observation/control is unavailable.              |
+| unknown      | Available evidence is insufficient for another status.                          |
 
-An integration may expose more specific states. They should map into the UI without losing useful detail, but not with greater certainty than the source supports.
+An integration may expose more specific states. They should map into the UI
+without losing useful detail, but not with greater certainty than the source
+supports.
 
 ### Attention state
 
@@ -104,7 +110,8 @@ Examples:
 - error;
 - disconnected.
 
-A running session may still need attention. A waiting session may be waiting for something other than the user.
+A running session may still need attention. A waiting session may be waiting for
+something other than the user.
 
 ## 4. Activity item
 
@@ -138,9 +145,12 @@ Conceptual properties may include:
 
 When the source provides a strict sequence, preserve it.
 
-When only timestamps exist, display the best known order without claiming stronger causality than the data supports.
+When only timestamps exist, display the best known order without claiming
+stronger causality than the data supports.
 
-Duplicate delivery is possible in many event systems. An implementation should avoid visibly duplicating the same authoritative event when stable event identity is available.
+Duplicate delivery is possible in many event systems. An implementation should
+avoid visibly duplicating the same authoritative event when stable event
+identity is available.
 
 ## 5. Approval
 
@@ -201,7 +211,8 @@ The application must not fabricate them from unrelated fields.
 
 ## 8. Workflow item
 
-A **Workflow Item** is an optional semantic item extracted from a recognized workflow shape.
+A **Workflow Item** is an optional semantic item extracted from a recognized
+workflow shape.
 
 Conceptual properties may include:
 
@@ -214,11 +225,13 @@ Conceptual properties may include:
 - child items;
 - artifact references.
 
-A workflow can still be useful in Thrallwright without any Workflow Items if the document is shown generically.
+A workflow can still be useful in Thrallwright without any Workflow Items if the
+document is shown generically.
 
 ## 9. Artifact
 
-An **Artifact** is a durable output or reference surfaced by an authoritative source.
+An **Artifact** is a durable output or reference surfaced by an authoritative
+source.
 
 Conceptual properties may include:
 
@@ -230,7 +243,9 @@ Conceptual properties may include:
 - originating workflow item;
 - creation time when known.
 
-The interface should treat untrusted artifact references as data. Merely seeing file-like text in a transcript is not enough to create an authoritative Artifact.
+The interface should treat untrusted artifact references as data. Merely seeing
+file-like text in a transcript is not enough to create an authoritative
+Artifact.
 
 ## 10. Relationships
 
@@ -244,11 +259,13 @@ A session is observed or controlled through an integration.
 
 ### Session to session
 
-A session may have a parent and children when the harness exposes that relationship.
+A session may have a parent and children when the harness exposes that
+relationship.
 
 ### Session to workflow
 
-A session may relate to a workflow or workflow item through an explicit reference or user-established association.
+A session may relate to a workflow or workflow item through an explicit
+reference or user-established association.
 
 ### Session to approval
 
@@ -256,7 +273,8 @@ An approval belongs to the session that requested it.
 
 ### Session or workflow item to artifact
 
-Artifacts may be associated with the work that produced them when an authoritative relationship exists.
+Artifacts may be associated with the work that produced them when an
+authoritative relationship exists.
 
 ## 11. Live state versus durable state
 
@@ -272,11 +290,13 @@ Observable events retained or retrievable after they occurred.
 
 ### Live execution
 
-A currently running process or remote execution that the integration can authoritatively observe.
+A currently running process or remote execution that the integration can
+authoritatively observe.
 
 ### Resumable conversation
 
-A harness-level ability to continue a prior conversation, which may create or attach to new live execution.
+A harness-level ability to continue a prior conversation, which may create or
+attach to new live execution.
 
 ### Workflow state
 
@@ -296,7 +316,8 @@ Examples:
 - parent/child relationships come from harness metadata;
 - source-control state comes from the workspace source-control system.
 
-When two sources disagree, Thrallwright should preserve their distinction rather than silently combine them into invented truth.
+When two sources disagree, Thrallwright should preserve their distinction rather
+than silently combine them into invented truth.
 
 ## 13. Freshness
 

@@ -11,9 +11,9 @@ Use `X.Y.Z` application versions and immutable `vX.Y.Z` Git tags. Before 1.0,
 increment the patch for compatible fixes and the minor for new features or
 breaking changes, resetting the patch to zero. Describe breaking changes
 explicitly even while the application is pre-1.0. At 1.0 and later, use a major
-increment for incompatible changes, a minor for compatible features, and a
-patch for compatible fixes. Conventional commit headers help assemble notes;
-they do not automatically choose or publish a version.
+increment for incompatible changes, a minor for compatible features, and a patch
+for compatible fixes. Conventional commit headers help assemble notes; they do
+not automatically choose or publish a version.
 
 ## Prepare a release PR
 
@@ -25,9 +25,9 @@ they do not automatically choose or publish a version.
    when needed, and follow the
    [dependency/cache procedure](development.md#dependency-versions). Do not
    delete or casually regenerate the lockfile.
-4. Run the [release checks](#release-checks), resolve review findings, and obtain
-   explicit authorization to merge. A merged release-preparation PR is separate
-   from authorization to publish its tag and GitHub Release.
+4. Run the [release checks](#release-checks), resolve review findings, and
+   obtain explicit authorization to merge. A merged release-preparation PR is
+   separate from authorization to publish its tag and GitHub Release.
 
 The version inventory is:
 
@@ -40,10 +40,10 @@ The version inventory is:
 | Root `package.json`                                           | Remains a private, unversioned workspace coordinator.            |
 
 At the initial workflow rollout, server/contracts, Nix metadata, and Codex
-client metadata are `0.1.0`, while web is `0.0.0`. These are existing development
-values, not evidence of a synchronized release. The first release-preparation
-PR must reconcile them. That synchronization is intentionally not a side effect
-of documenting this procedure.
+client metadata are `0.1.0`, while web is `0.0.0`. These are existing
+development values, not evidence of a synchronized release. The first
+release-preparation PR must reconcile them. That synchronization is
+intentionally not a side effect of documenting this procedure.
 
 ## Release checks
 
@@ -58,31 +58,32 @@ build the package, synchronize versions, tag, or publish. A failure to evaluate
 Nix or inspect metadata is a failed check, not evidence of consistency.
 
 This command is separate from ordinary CI: the initial web `0.0.0` version
-intentionally causes `just check-release --version 0.1.0` to fail until a release
-PR synchronizes it. A passing metadata check alone does not establish release
-readiness or authorization.
+intentionally causes `just check-release --version 0.1.0` to fail until a
+release PR synchronizes it. A passing metadata check alone does not establish
+release readiness or authorization.
 
-Also run `just check`, `just test-e2e`, and `just package-smoke`. Record commands,
-revision, results, and the architectures actually tested. Where available, `just ci` combines source and browser checks.
-Check the final PR's commit/title conventions and required GitHub checks.
+Also run `just check`, `just test-e2e`, and `just package-smoke`. Record
+commands, revision, results, and the architectures actually tested. Where
+available, `just ci` combines source and browser checks. Check the final PR's
+commit/title conventions and required GitHub checks.
 
 For changes affecting the harness boundary, run the read-only `just probe` and
 review the [integration evidence](integration/codex.md). Run authenticated,
 paid-model smoke checks only deliberately with authorization; describe exactly
-which capabilities were verified and which remain fixture-only or unverified.
-Do not imply that a release smoke test covered approvals it did not encounter.
+which capabilities were verified and which remain fixture-only or unverified. Do
+not imply that a release smoke test covered approvals it did not encounter.
 
-After merging, verify that `check`, `package`, and `commit-conventions` all passed
-on the exact merged commit selected for the tag. A green earlier PR revision
-does not establish that the merged commit passed. CI currently verifies x86_64
-Linux; aarch64 Linux is a flake target but must not be described as release-tested
-without separate evidence.
+After merging, verify that `check`, `package`, and `commit-conventions` all
+passed on the exact merged commit selected for the tag. A green earlier PR
+revision does not establish that the merged commit passed. CI currently verifies
+x86_64 Linux; aarch64 Linux is a flake target but must not be described as
+release-tested without separate evidence.
 
 ## Publish after authorization
 
-Obtain Alex's explicit authorization for the selected version and commit. From
-a clean checkout, fetch `main` and identify that green merged commit. Replace
-the placeholders below; `RELEASE_COMMIT` must be the verified full commit ID.
+Obtain Alex's explicit authorization for the selected version and commit. From a
+clean checkout, fetch `main` and identify that green merged commit. Replace the
+placeholders below; `RELEASE_COMMIT` must be the verified full commit ID.
 
 ```sh
 (
@@ -106,12 +107,12 @@ instructions. No additional binary distribution or npm publication is implied.
 The subshell stops on any failed guard or publication command without changing
 the caller's shell options.
 
-Tags are not moved or reused. If publication fails after pushing the tag, inspect
-the remote tag and GitHub Release before retrying; create the missing release
-against the verified existing tag. If a published release needs correction,
-record the problem and prepare a new version rather than force-pushing its tag.
-Read back the published tag's commit and release URL and record them in the
-release issue before closing it.
+Tags are not moved or reused. If publication fails after pushing the tag,
+inspect the remote tag and GitHub Release before retrying; create the missing
+release against the verified existing tag. If a published release needs
+correction, record the problem and prepare a new version rather than
+force-pushing its tag. Read back the published tag's commit and release URL and
+record them in the release issue before closing it.
 
 ## Install a specific revision
 
@@ -126,6 +127,7 @@ nix profile add "github:furinvader/thrallwright/$RELEASE_REF#thrallwright"
 ```
 
 These commands use the selected revision's lockfile. Keep development installs
-and published-release claims distinct. If publication or verification is blocked,
-leave the release issue open with its owner, exact blocker, completion steps,
-and outstanding evidence, following the [contribution workflow](../CONTRIBUTING.md).
+and published-release claims distinct. If publication or verification is
+blocked, leave the release issue open with its owner, exact blocker, completion
+steps, and outstanding evidence, following the
+[contribution workflow](../CONTRIBUTING.md).

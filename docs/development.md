@@ -3,9 +3,8 @@
 Thrallwright currently targets Linux on `x86_64` and `aarch64`. The flake pins
 Nixpkgs, Node 24, pnpm 10, the Codex CLI, native build tools, Chromium, and
 `just`, and the Renovate configuration validator. The pnpm lockfile pins
-JavaScript packages. Each target workspace still
-provides its own project dependencies; Thrallwright does not change that
-workspace's toolchain.
+JavaScript packages. Each target workspace still provides its own project
+dependencies; Thrallwright does not change that workspace's toolchain.
 
 ## Prerequisite
 
@@ -39,8 +38,8 @@ with the normal application profile. Extra `just dev` arguments go to the
 service CLI; `--workflow tasks.json` reads a JSON file relative to the checkout
 workspace and saves that selection in the development profile.
 
-Coordinate one interactive `just dev` owner per machine. Its browser, proxy,
-and readiness URLs still use fixed ports; separate worktrees or passing only
+Coordinate one interactive `just dev` owner per machine. Its browser, proxy, and
+readiness URLs still use fixed ports; separate worktrees or passing only
 `--port` do not isolate that complete development loop.
 
 Run `just` to list recipes. Routine checks and builds are:
@@ -56,41 +55,46 @@ just format
 ```
 
 `just check` checks Renovate policy, exact dependency declarations, local
-documentation links, formatting, lint, compilation,
-and fast tests without rewriting files. `just ci` runs `just check` followed by
-browser workflows using the freshly built assets, so the application is built
-once. `just format` is the explicit rewrite command. `just test` runs all fast
-tests, or one package with `just test server`,
-`just test web`, or `just test contracts`. Arguments after the package name go
-to that package's test runner; the small Node tooling-test suite also runs for
-focused tests. `just test-e2e` builds the app first and forwards
-optional Playwright arguments, such as a test path. The shell supplies Chromium for
-Playwright, so browser tests do not need a separate browser download. `just
-probe` checks Codex through read-only RPCs. `just probe --smoke` additionally
-starts ephemeral model turns and tests interruption; it requires Codex
-authentication and may incur model usage. Ordinary checks need no Codex
+documentation links, formatting, lint, compilation, and fast tests without
+rewriting files. `just ci` runs `just check` followed by browser workflows using
+the freshly built assets, so the application is built once. `just format` is the
+explicit rewrite command. `just test` runs all fast tests, or one package with
+`just test server`, `just test web`, or `just test contracts`. Arguments after
+the package name go to that package's test runner; the small Node tooling-test
+suite also runs for focused tests. `just test-e2e` builds the app first and
+forwards optional Playwright arguments, such as a test path. The shell supplies
+Chromium for Playwright, so browser tests do not need a separate browser
+download. `just probe` checks Codex through read-only RPCs. `just probe --smoke`
+additionally starts ephemeral model turns and tests interruption; it requires
+Codex authentication and may incur model usage. Ordinary checks need no Codex
 credentials or paid model calls.
 
-Browser tests start one service per test with an OS-assigned loopback port and
-a unique temporary workspace and profile. Each run reads its own service
+Browser tests start one service per test with an OS-assigned loopback port and a
+unique temporary workspace and profile. Each run reads its own service
 announcement, waits for health with a deadline, and stops its process group
 before removing temporary state. Separate prebuilt worktrees can run browser
 tests concurrently; avoid concurrent builds in the same worktree. This prevents
 port and state collisions, but is not an execution security boundary. See the
 [future isolation plan](test-isolation.md) for the deferred container approach.
 
+Prettier formats all repository Markdown, including agent instructions,
+specifications, and architecture decisions. `just format` wraps prose at an
+80-column target, and `pnpm format:check` (also part of `just check`) enforces
+the same formatting. Tables, code blocks, and long links may exceed that target.
+
 `just check-docs` uses the pinned Lychee tool to check local Markdown link
 targets and heading anchors without network requests. It includes tracked and
-non-ignored new Markdown, including templates, agent instructions, specifications,
-and ADRs regardless of formatting exclusions. Deleted input documents are not
-read, but links targeting them fail. External URLs are not checked. GitHub
-template formatting is checked with Prettier; reviewers still inspect their
-meaning and rendering. Run the command inside `nix develop` after setup.
+non-ignored new Markdown, including templates, agent instructions,
+specifications, and ADRs. Deleted input documents are not read, but links
+targeting them fail. External URLs are not checked. GitHub template formatting
+is checked with Prettier; reviewers still inspect their meaning and rendering.
+Run the command inside `nix develop` after setup.
 
 `just check-renovate` runs the pinned strict Renovate validator and offline
-policy cases using the same Renovate implementation. It checks bot configuration;
-the [dependency-maintenance guide](dependency-maintenance.md) separately defines
-dashboard selection, review, and live activation verification.
+policy cases using the same Renovate implementation. It checks bot
+configuration; the [dependency-maintenance guide](dependency-maintenance.md)
+separately defines dashboard selection, review, and live activation
+verification.
 
 `just smoke [--workspace PATH]` exercises the browser and service against a
 real, logged-in Codex CLI. It starts one model turn and can consume paid model
@@ -98,12 +102,11 @@ usage, so run it deliberately rather than as part of ordinary CI. The default
 workspace is the repository root because `just` runs recipes there; pass
 `--workspace` to use a specific project. Relative paths passed to this recipe
 also resolve from the repository root. The check creates a temporary application
-profile and workflow file.
-`just smoke --controls [--workspace PATH]` extends that check through a real
-service restart using the same temporary profile and workflow reference,
-explicit Resume, Send, and Interrupt. It starts three model turns in total,
-including one that is interrupted, and may consume more model usage. Neither
-smoke command runs in ordinary CI.
+profile and workflow file. `just smoke --controls [--workspace PATH]` extends
+that check through a real service restart using the same temporary profile and
+workflow reference, explicit Resume, Send, and Interrupt. It starts three model
+turns in total, including one that is interrupted, and may consume more model
+usage. Neither smoke command runs in ordinary CI.
 
 Noninteractive CI commands use the same interface after setup:
 
@@ -115,12 +118,12 @@ nix develop -c just ci
 GitHub CI runs on pushes to `main` and when a PR is opened, updated, reopened,
 edited, or marked ready for review. Edits include changing the target branch;
 title/body edits also run both required jobs so a metadata-only event cannot
-replace validation with skipped checks. New runs cancel older runs for the
-same PR or branch within each workflow. The `check` job runs setup
-and `just ci`; the independent `package` job runs `just package-smoke` in the
-Nix development shell. CI has read-only repository permissions and checkout
-does not persist its Git credentials. Commit naming is verified separately by
-the `commit-conventions` job.
+replace validation with skipped checks. New runs cancel older runs for the same
+PR or branch within each workflow. The `check` job runs setup and `just ci`; the
+independent `package` job runs `just package-smoke` in the Nix development
+shell. CI has read-only repository permissions and checkout does not persist its
+Git credentials. Commit naming is verified separately by the
+`commit-conventions` job.
 
 Pushing a rebase or merge of updated `main` triggers CI automatically. When
 `main` advances by itself, update the PR branch to validate against it. For a
@@ -154,14 +157,15 @@ type(scope): summary
 type(scope)!: summary
 ```
 
-The project follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-header format with lowercase types. Use `feat` for features, `fix` for bug fixes,
-`docs` for documentation, `test` for tests, `ci` for automation, `build` for build
-or dependency changes, `refactor` for restructuring, `perf` for performance,
-`style` for formatting, `chore` for other maintenance, and `revert` for reversions.
-A scope such as `server`, `web`, or `deps` is optional. Add `!` for a breaking
-change and explain it in the commit body or PR description. The summary must be
-nonempty and stay on one line.
+The project follows the
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) header
+format with lowercase types. Use `feat` for features, `fix` for bug fixes,
+`docs` for documentation, `test` for tests, `ci` for automation, `build` for
+build or dependency changes, `refactor` for restructuring, `perf` for
+performance, `style` for formatting, `chore` for other maintenance, and `revert`
+for reversions. A scope such as `server`, `web`, or `deps` is optional. Add `!`
+for a breaking change and explain it in the commit body or PR description. The
+summary must be nonempty and stay on one line.
 
 Examples:
 
@@ -189,29 +193,33 @@ just check-commits --from origin/main --to HEAD --title 'ci: check commit and PR
 ```
 
 The dedicated **Commit conventions** workflow checks the PR title and every
-commit in its base-to-head range. It reruns on title edits as well as new commits.
-It ignores GitHub's synthetic test-merge commit and audits only newly introduced
-commits on pushes to `main`. The script reads event JSON directly, so titles are
-treated as data. No additional Node packages are needed.
+commit in its base-to-head range. It reruns on title edits as well as new
+commits. It ignores GitHub's synthetic test-merge commit and audits only newly
+introduced commits on pushes to `main`. The script reads event JSON directly, so
+titles are treated as data. No additional Node packages are needed.
 
 The reviewed main-branch policy requires PRs and the `check`, `package`, and
-`commit-conventions` checks. See the [maintainer guide](maintaining.md#main-branch-and-merge-settings)
-for the authoritative configuration and live inspection procedure. Repository
-settings are separate from workflow files; push checks audit commits already on
-`main` and do not retroactively block a push. Follow the
+`commit-conventions` checks. See the
+[maintainer guide](maintaining.md#main-branch-and-merge-settings) for the
+authoritative configuration and live inspection procedure. Repository settings
+are separate from workflow files; push checks audit commits already on `main`
+and do not retroactively block a push. Follow the
 [independent review and merge policy](../CONTRIBUTING.md#independent-review)
 before merging, including when agent reviewers share the author's account.
 
 ## Code map
 
-- **Entry and transport:** [CLI](../apps/server/src/cli.ts) parses launch options;
-  [application startup](../apps/server/src/app.ts) wires services, HTTP, and WebSocket.
-- **Backend features:** [sessions](../apps/server/src/features/sessions/sessions.ts),
+- **Entry and transport:** [CLI](../apps/server/src/cli.ts) parses launch
+  options; [application startup](../apps/server/src/app.ts) wires services,
+  HTTP, and WebSocket.
+- **Backend features:**
+  [sessions](../apps/server/src/features/sessions/sessions.ts),
   [workflow JSON](../apps/server/src/features/workflow/workflow.ts),
   [commands and journal](../apps/server/src/features/commands/commands.ts),
   [auth](../apps/server/src/features/integration/auth.ts), and
   [approvals](../apps/server/src/features/approvals/approvals.ts).
-- **Codex and storage:** [app-server adapter](../apps/server/src/integrations/codex.ts),
+- **Codex and storage:**
+  [app-server adapter](../apps/server/src/integrations/codex.ts),
   [XDG/profile paths](../apps/server/src/storage/paths.ts),
   [SQLite schema and migrations](../apps/server/src/storage/database.ts), and
   [observation storage](../apps/server/src/storage/observations.ts).
@@ -259,20 +267,19 @@ hash: temporarily set `pnpmDeps.hash` in `flake.nix` to `pkgs.lib.fakeHash`, run
 by the mismatch error, and rerun `just package-smoke`. This forces Nix to fetch
 the changed graph instead of reusing the old cache. A manifest-only pin change
 to an already locked version may leave the cache hash unchanged. Keep dependency
-changes in a reviewable commit. Exact pins
-prevent unintended version drift; selecting and reviewing trustworthy versions
-remains necessary.
+changes in a reviewable commit. Exact pins prevent unintended version drift;
+selecting and reviewing trustworthy versions remains necessary.
 
 ## Release metadata verification
 
 After `just setup` verifies the frozen lockfile, use
-`just check-release --version X.Y.Z` to compare release metadata without changing
-it. The command evaluates the Nix package for the current supported Linux
-architecture and checks first-party package versions, local references, the
-private unversioned coordinator, and Codex client metadata. It is outside
+`just check-release --version X.Y.Z` to compare release metadata without
+changing it. The command evaluates the Nix package for the current supported
+Linux architecture and checks first-party package versions, local references,
+the private unversioned coordinator, and Codex client metadata. It is outside
 ordinary CI because development metadata may be unsynchronized. See the
-[release procedure](releases.md#release-checks) for its limits and the additional
-release evidence and authorizations required.
+[release procedure](releases.md#release-checks) for its limits and the
+additional release evidence and authorizations required.
 
 ## Run the packaged application
 
@@ -296,26 +303,26 @@ that selection in the application profile for later launches. See
 [the workbench guide](workbench.md) for workflow and session behavior.
 `nix build .#thrallwright` writes a `result` link; `result/bin/thrallwright`
 provides the same command. Run `just package-smoke` to launch the installed
-service outside the checkout, check its browser assets and SQLite database,
-and restart with the same isolated profile.
+service outside the checkout, check its browser assets and SQLite database, and
+restart with the same isolated profile.
 
 The normal profile uses XDG application directories under `thrallwright/`:
 `XDG_CONFIG_HOME` for settings, `XDG_DATA_HOME` for the SQLite database,
 `XDG_STATE_HOME` for state such as future diagnostic logs, and `XDG_CACHE_HOME`
 for separate disposable file caches if needed. Session cache records currently
 live in the SQLite database. When unset, those base directories default to
-`~/.config`, `~/.local/share`, `~/.local/state`, and `~/.cache` respectively. The
-`--profile-dir` option keeps
-Thrallwright's files together at an explicit path. This does not relocate
-Codex's own storage or authentication. To log in with the managed Codex CLI
-without a global installation, run `nix develop -c codex login` from the
-Thrallwright checkout before using actions that require authentication. Without
-a checkout, use `nix develop github:furinvader/thrallwright -c codex login`.
-The workbench checks Codex's auth status
-with a read-only request and never copies account details into its database.
-For a provider that does not require OpenAI authentication, a missing OpenAI
-account does not block its controls. See [the workbench guide](workbench.md)
-for explicit Resume, Send, Interrupt, and approval behavior.
+`~/.config`, `~/.local/share`, `~/.local/state`, and `~/.cache` respectively.
+The `--profile-dir` option keeps Thrallwright's files together at an explicit
+path. This does not relocate Codex's own storage or authentication. To log in
+with the managed Codex CLI without a global installation, run
+`nix develop -c codex login` from the Thrallwright checkout before using actions
+that require authentication. Without a checkout, use
+`nix develop github:furinvader/thrallwright -c codex login`. The workbench
+checks Codex's auth status with a read-only request and never copies account
+details into its database. For a provider that does not require OpenAI
+authentication, a missing OpenAI account does not block its controls. See
+[the workbench guide](workbench.md) for explicit Resume, Send, Interrupt, and
+approval behavior.
 
 Nix packages only Linux for now. The current flake has outputs for x86_64 and
 aarch64 Linux; CI checks x86_64 Linux. Chromium and Codex are large parts of the
